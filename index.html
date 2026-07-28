@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Audio Transcript & Acoustic Event Analyzer (V1)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Top Navigation Header -->
+    <header class="app-header">
+      <div class="logo-area">
+        <div class="logo-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2v20M17 5v14M7 8v8M2 11v2M22 11v2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div>
+          <h1>Audio Acoustic & Transcript Analyzer <span class="badge">V1</span></h1>
+          <p class="subtitle">Speech-to-Text, Millisecond Pause Detection & Background Event Classification</p>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <button id="btn-load-demo" class="btn btn-secondary">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+          Load Raju Demo Audio
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <!-- File Input & Dropzone Panel -->
+      <section class="card upload-section">
+        <div id="dropzone" class="dropzone">
+          <input type="file" id="audio-file-input" accept="audio/*,.mp3,.wav,.m4a,.ogg,.flac,.webm" class="file-input">
+          <div class="dropzone-content">
+            <div class="upload-icon">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <h3>Drag & Drop Audio File Here</h3>
+            <p>Supports MP3, WAV, M4A, OGG, FLAC, WebM files (or click anywhere inside box to browse)</p>
+            <div class="btn-group">
+              <button id="btn-browse-file" class="btn btn-primary" type="button">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+                Choose Audio File
+              </button>
+              <button id="btn-record-mic" class="btn btn-accent" type="button">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="6" fill="currentColor"/></svg>
+                Record Mic
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Player & Waveform Visualizer -->
+      <section class="card player-section" id="player-card" style="display: none;">
+        <div class="player-header">
+          <div class="file-meta">
+            <span id="current-filename" class="filename">raju_sample_audio.wav</span>
+            <span id="current-duration" class="duration-tag">00:00.000 (0 ms)</span>
+          </div>
+          <div class="player-controls">
+            <button id="btn-play-pause" class="btn btn-icon" title="Play / Pause">
+              <svg id="icon-play" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              <svg id="icon-pause" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="display: none;"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+            </button>
+            <span id="play-time" class="time-code">00:00.000</span>
+          </div>
+        </div>
+
+        <div class="waveform-container">
+          <canvas id="waveform-canvas"></canvas>
+          <div class="waveform-legend">
+            <span class="legend-item"><span class="color-dot speech-dot"></span> Active Speech</span>
+            <span class="legend-item"><span class="color-dot pause-dot"></span> Pause / Silence</span>
+            <span class="legend-item"><span class="color-dot noise-dot"></span> Background Noise</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Voice Focus Demo Section -->
+      <section class="spin-section" style="margin: 40px 0; color: #f0f4f8;">
+        <h2 style="font-size: 2.2rem; margin-bottom: 16px;">Give it a spin</h2>
+        <p style="color: #8b9bb4; max-width: 600px; margin-bottom: 32px; line-height: 1.6;">
+          Voice Focus removes background noise and other voices. The transcript keeps only what the speaker said. Turn it on and off to hear the difference.
+        </p>
+        
+        <div class="demo-container" style="background: #151515; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); display: grid; grid-template-columns: 1fr 1fr; gap: 40px; padding: 40px; position: relative;">
+          
+          <!-- Left Panel -->
+          <div class="demo-left" style="display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <div style="color: #666; font-size: 0.8rem; margin-bottom: 12px;">Sample · Robot</div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 40px;">
+                <button class="sample-btn active" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 12px; border-radius: 30px; cursor: pointer;">Robot</button>
+                <button class="sample-btn" style="background: transparent; border: 1px solid rgba(255,255,255,0.1); color: #888; padding: 12px; border-radius: 30px; cursor: pointer;">Portfolio</button>
+                <button class="sample-btn" style="background: transparent; border: 1px solid rgba(255,255,255,0.1); color: #888; padding: 12px; border-radius: 30px; cursor: pointer;">Incredible</button>
+                <button class="sample-btn" style="background: transparent; border: 1px solid rgba(255,255,255,0.1); color: #888; padding: 12px; border-radius: 30px; cursor: pointer;">Machines</button>
+              </div>
+              
+              <!-- Fake Audio Player -->
+              <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 40px;">
+                <!-- Waveform -->
+                <div style="flex: 1; height: 40px; display: flex; align-items: center; gap: 2px;">
+                  <div style="width: 3px; height: 100%; background: #4facfe; border-radius: 2px;"></div>
+                  <div style="width: 100%; height: 2px; background: rgba(255,255,255,0.1); position: relative; margin-left: 8px;">
+                     <!-- Dashed line representing waveform -->
+                     <div style="position: absolute; top: -10px; width: 100%; display: flex; gap: 4px; overflow: hidden; opacity: 0.2;">
+                        <div style="width: 2px; height: 10px; background: #fff;"></div>
+                        <div style="width: 2px; height: 20px; background: #fff;"></div>
+                        <div style="width: 2px; height: 15px; background: #fff;"></div>
+                        <div style="width: 2px; height: 8px; background: #fff;"></div>
+                        <div style="width: 2px; height: 22px; background: #fff;"></div>
+                        <div style="width: 2px; height: 12px; background: #fff;"></div>
+                        <div style="width: 2px; height: 5px; background: #fff;"></div>
+                     </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div style="display: flex; align-items: center; gap: 16px; font-size: 0.8rem; color: #666;">
+                <button style="width: 32px; height: 32px; border-radius: 50%; background: #222; border: none; color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer;">▶</button>
+                <div style="flex: 1; height: 2px; background: rgba(255,255,255,0.1); position: relative;">
+                  <div style="position: absolute; left: 10%; top: -4px; width: 10px; height: 10px; background: #fff; border-radius: 50%;"></div>
+                </div>
+                <div>0:00 / 0:19</div>
+              </div>
+            </div>
+            
+            <div style="margin-top: 40px;">
+              <div style="color: #666; font-size: 0.8rem; margin-bottom: 12px;">Voice Focus</div>
+              <div style="display: inline-flex; background: #0a0a0a; border-radius: 6px; padding: 4px; border: 1px solid rgba(255,255,255,0.05);">
+                <button id="vf-off" style="background: transparent; color: #888; border: none; padding: 8px 32px; border-radius: 4px; cursor: pointer; font-weight: 500;">Off</button>
+                <button id="vf-on" style="background: #6f86ff; color: #fff; border: none; padding: 8px 32px; border-radius: 4px; cursor: pointer; font-weight: 500;">On</button>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Right Panel -->
+          <div class="demo-right" style="display: flex; flex-direction: column; justify-content: space-between; border-left: 1px solid rgba(255,255,255,0.05); padding-left: 40px;">
+            <div>
+              <div style="color: #666; font-size: 0.8rem; margin-bottom: 16px;">Quail Voice Focus</div>
+              <div id="transcript-box" style="font-size: 1.25rem; line-height: 1.6; color: #e0e0e0; font-family: var(--font-sans);">
+                I would like to uh, order a robot, please. 
+                <span class="noise-text" style="color: #d27763; transition: opacity 0.3s ease;">A robot? What do you want with a robot?</span> 
+                Oh, that would be super practical to have a robot. It could be in multiple places at the same time. 
+                <span class="noise-text" style="color: #d27763; transition: opacity 0.3s ease;">You know what's the best place to build your voice agent?</span>
+              </div>
+            </div>
+            
+            <div style="display: flex; gap: 40px; margin-top: 40px;">
+              <div>
+                <div style="font-size: 2.5rem; color: #4facfe; font-weight: 300; line-height: 1;">10%</div>
+                <div style="color: #666; font-size: 0.75rem; margin-top: 8px;">Word error rate</div>
+              </div>
+              <div>
+                <div id="bg-words-stat" style="font-size: 2.5rem; color: #f0f4f8; font-weight: 300; line-height: 1;">20</div>
+                <div style="color: #666; font-size: 0.75rem; margin-top: 8px;">Background words removed</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Metrics Scorecard Grid -->
+      <section class="metrics-grid" id="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-icon speech-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
+          </div>
+          <div class="metric-data">
+            <span class="metric-label">1. Total Speech Time</span>
+            <div class="metric-value" id="val-speech-time">0 <span class="unit">ms</span></div>
+            <span class="metric-sub" id="sub-speech-time">0.00 seconds</span>
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-icon silence-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/></svg>
+          </div>
+          <div class="metric-data">
+            <span class="metric-label">2. Total Silence Time</span>
+            <div class="metric-value" id="val-silence-time">0 <span class="unit">ms</span></div>
+            <span class="metric-sub" id="sub-silence-time">Includes bg noises</span>
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-icon syllables-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          </div>
+          <div class="metric-data">
+            <span class="metric-label">3. Syllables</span>
+            <div class="metric-value" id="val-syllables">0</div>
+            <span class="metric-sub">Phoneme count</span>
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-icon words-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          </div>
+          <div class="metric-data">
+            <span class="metric-label">4. Words</span>
+            <div class="metric-value" id="val-words">0</div>
+            <span class="metric-sub">Total word tokens</span>
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-icon pause-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+          </div>
+          <div class="metric-data">
+            <span class="metric-label">5. Total Pauses</span>
+            <div class="metric-value" id="val-pauses">0</div>
+            <span class="metric-sub" id="sub-pauses">Avg: 0 ms</span>
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-icon bg-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12h20M2 6h20M2 18h20"/></svg>
+          </div>
+          <div class="metric-data">
+            <span class="metric-label">Background Events</span>
+            <div class="metric-value" id="val-bg-events">0</div>
+            <span class="metric-sub" id="sub-bg-events">Noises / Clicks / Hum</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Annotated Transcript Panel -->
+      <section class="card transcript-section">
+        <div class="section-header">
+          <div>
+            <h2>Inline Annotated Transcript</h2>
+            <p class="section-subtitle">Transcript with inline millisecond pause indicators and detected background events</p>
+          </div>
+          <div class="action-buttons">
+
+            <button id="btn-copy-transcript" class="btn btn-sm btn-secondary">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              Copy Text
+            </button>
+            <button id="btn-export-json" class="btn btn-sm btn-secondary">Export JSON</button>
+          </div>
+        </div>
+
+        <div class="pause-filter-bar">
+          <div class="filter-group">
+            <label for="slider-min-pause">⚙️ Pause Filter (Hide micro-gaps &lt; <span id="val-min-pause-label">100 ms</span>):</label>
+            <input type="range" id="slider-min-pause" min="10" max="1000" step="10" value="100" class="filter-range">
+          </div>
+        </div>
+
+        <div class="transcript-editor-container" style="position: relative;">
+          
+          <div id="transcription-loading-overlay" class="transcription-loading-overlay">
+            <div class="spinner"></div>
+            <div id="loading-overlay-text" class="loading-overlay-text">⏳ Downloading AI Model (40MB)... This may take a minute.</div>
+          </div>
+
+          <div id="transcript-display" class="transcript-display">
+            <p class="placeholder-text">Load an audio file or click <strong>"Load Raju Demo Audio"</strong> to generate transcript with inline pause markers.</p>
+          </div>
+          
+          <div class="transcript-text-input-area" style="margin-top: 16px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 14px;">
+            <label for="custom-transcript-input" style="font-size: 0.85rem; color: var(--accent-cyan); display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; font-weight: 600;">
+              <span>📝 Audio Spoken Text / Transcript:</span>
+              <span style="font-size: 0.78rem; font-weight: normal; color: var(--text-muted);">Auto-aligned to detected speech &amp; pause timestamps</span>
+            </label>
+            <textarea id="custom-transcript-input" rows="3" class="transcript-textarea" placeholder="Spoken audio text will appear here. You can also type or paste your exact audio transcript text here to sync inline pause tags..."></textarea>
+          </div>
+        </div>
+      </section>
+
+      <!-- 6. Location of Pauses Table -->
+      <section class="card pause-locations-section">
+        <div class="section-header">
+          <div>
+            <h2>6. Location of Pauses & Acoustic Events</h2>
+            <p class="section-subtitle">Detailed breakdown of exact start/end timestamps (ms), durations (ms), and acoustic classifications</p>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Start (ms)</th>
+                <th>End (ms)</th>
+                <th>Duration (ms)</th>
+                <th>Acoustic Classification</th>
+                <th>Timestamp Code</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="pause-table-body">
+              <tr>
+                <td colspan="7" class="text-center empty-cell">No pause data loaded yet. Upload audio or click demo above.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
