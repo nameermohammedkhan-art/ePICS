@@ -18,8 +18,10 @@ def main():
     print(f"Raw Transcript (includes background/other voices):\n{raw_transcript}\n")
 
     print("Loading LLM for Transcript Filtering (Flan-T5-Small)...")
-    # Using a small, fast model to clean the text locally
-    llm_pipe = pipeline("text2text-generation", model="google/flan-t5-small", device="cpu")
+    from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+    
+    tokenizer = AutoTokenizer.from_pretrained("google/flan-t5-small")
+    model = AutoModelForSeq2SeqLM.from_pretrained("google/flan-t5-small")
 
     prompt = (
         "The following is a messy transcript containing a primary speaker and background interruptions. "
@@ -29,8 +31,9 @@ def main():
     )
 
     print("Cleaning transcript (Voice Focus processing)...")
-    llm_output = llm_pipe(prompt, max_new_tokens=100)
-    cleaned_transcript = llm_output[0]['generated_text'].strip()
+    input_ids = tokenizer(prompt, return_tensors="pt").input_ids
+    outputs = model.generate(input_ids, max_new_tokens=100)
+    cleaned_transcript = tokenizer.decode(outputs[0], skip_special_tokens=True)
 
     print("\n--- VOICE FOCUS: ON ---")
     print(f"Cleaned Transcript (Primary speaker only):\n{cleaned_transcript}\n")
