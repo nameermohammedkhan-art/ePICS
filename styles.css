@@ -611,3 +611,10 @@ h1 {
   border-radius: 0;
 }
 
+.pause-tag.active-word {
+  background: var(--text-main) !important;
+  color: var(--bg-color) !important;
+  border-style: solid !important;
+}
+
+

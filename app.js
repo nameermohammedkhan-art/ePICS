@@ -616,7 +616,8 @@ class App {
     );
 
     const tokens = text.split(/(\(pause detected: \d+ ms.*?\))/g);
-
+    const activePauses = this.analysisResult.pauseSegments.filter(p => p.durationMs >= this.displayMinPauseMs);
+    let pauseIdx = 0;
     let html = '';
     let wordIdx = 0;
 
@@ -626,8 +627,12 @@ class App {
         if (this.showPauses) {
           const match = tok.match(/\(pause detected: (\d+) ms(.*?)\)/);
           const duration = match ? match[1] : '';
-          html += `<span class="pause-tag" style="font-size: 0.7em; color: var(--text-muted);">(pause: ${duration}ms)</span> `;
+          const pauseSeg = activePauses[pauseIdx];
+          const startMs = pauseSeg ? pauseSeg.startMs : 0;
+          const endMs = pauseSeg ? pauseSeg.endMs : 0;
+          html += `<span class="pause-tag" data-start-ms="${startMs}" data-end-ms="${endMs}" style="font-size: 0.7em; color: var(--text-muted); transition: background 0.15s ease;">(pause: ${duration}ms)</span> `;
         }
+        pauseIdx++;
       } else {
         const words = tok.trim().split(/\s+/).filter(Boolean);
         words.forEach(w => {
@@ -822,6 +827,17 @@ class App {
         } else {
           el.classList.remove('active-word');
         }
+      }
+    });
+
+    const pauseTokens = this.transcriptDisplay.querySelectorAll('.pause-tag');
+    pauseTokens.forEach((el) => {
+      const startMs = parseFloat(el.getAttribute('data-start-ms'));
+      const endMs = parseFloat(el.getAttribute('data-end-ms'));
+      if (currentMs >= startMs && currentMs <= endMs) {
+        el.classList.add('active-word');
+      } else {
+        el.classList.remove('active-word');
       }
     });
   }
