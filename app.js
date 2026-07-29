@@ -363,7 +363,12 @@ class App {
     this.isTranscribing = true;
 
     if (this.transcriptDisplay) {
-      this.transcriptDisplay.innerHTML = `<span style="color: var(--text-muted); font-size: 0.9em;">⏳ Loading AI transcription model... (This may take a minute on first run)</span>`;
+      this.transcriptDisplay.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 12px; color: var(--text-muted); font-size: 0.95em;">
+          <div class="spinner" style="width: 18px; height: 18px; border: 2px solid #ccc; border-top-color: var(--text-main); display: inline-block;"></div>
+          <span>Loading AI transcription model... (This may take a minute on first run)</span>
+        </div>
+      `;
     }
 
     try {
@@ -380,7 +385,12 @@ class App {
       }
 
       if (this.transcriptDisplay) {
-        this.transcriptDisplay.innerHTML = `<span style="color: var(--text-muted); font-size: 0.9em;">🎙️ Transcribing Audio...</span>`;
+        this.transcriptDisplay.innerHTML = `
+          <div style="display: flex; align-items: center; gap: 12px; color: var(--text-muted); font-size: 0.95em;">
+            <div class="spinner" style="width: 18px; height: 18px; border: 2px solid #ccc; border-top-color: var(--text-main); display: inline-block;"></div>
+            <span>Transcribing Audio...</span>
+          </div>
+        `;
       }
 
       const output = await this.transcriber(audioData, {
