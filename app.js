@@ -58,9 +58,6 @@ class App {
     this.initSpeechRecognition();
     this.resizeCanvas();
     window.addEventListener('resize', () => this.resizeCanvas());
-
-    // Auto-load robot demo on startup
-    this.loadDemoAudio('robot');
   }
 
   initSpeechRecognition() {
@@ -175,9 +172,7 @@ class App {
     const rect = this.canvas.parentElement.getBoundingClientRect();
     this.canvas.width = rect.width;
     this.canvas.height = 50;
-    if (this.analysisResult) {
-      this.renderWaveform();
-    }
+    this.renderWaveform();
   }
 
   async handleFile(file) {
@@ -649,11 +644,20 @@ class App {
   }
 
   renderWaveform() {
-    if (!this.analysisResult) return;
-
     const width = this.canvas.width;
     const height = this.canvas.height;
     this.ctx.clearRect(0, 0, width, height);
+
+    if (!this.analysisResult) {
+      // Draw flat baseline
+      this.ctx.strokeStyle = 'var(--pause-color)';
+      this.ctx.lineWidth = 1;
+      this.ctx.beginPath();
+      this.ctx.moveTo(0, height / 2);
+      this.ctx.lineTo(width, height / 2);
+      this.ctx.stroke();
+      return;
+    }
 
     const { frameEnergies, durationMs } = this.analysisResult;
     const numFrames = frameEnergies.length;
