@@ -88,83 +88,83 @@
       </section>
 
       <!-- Voice Focus Demo Section -->
-      <section class="spin-section" style="margin: 40px 0; color: #f0f4f8;">
+      <section class="spin-section">
         <h2 style="font-size: 2.2rem; margin-bottom: 16px;">Give it a spin</h2>
-        <p style="color: #8b9bb4; max-width: 600px; margin-bottom: 32px; line-height: 1.6;">
+        <p style="color: var(--text-muted); max-width: 600px; margin-bottom: 32px; line-height: 1.6;">
           Voice Focus removes background noise and other voices. The transcript keeps only what the speaker said. Turn it on and off to hear the difference.
         </p>
         
-        <div class="demo-container" style="background: #151515; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); display: grid; grid-template-columns: 1fr 1fr; gap: 40px; padding: 40px; position: relative;">
+        <div class="demo-container">
           
           <!-- Left Panel -->
-          <div class="demo-left" style="display: flex; flex-direction: column; justify-content: space-between;">
+          <div class="demo-left">
             <div>
-              <div style="color: #666; font-size: 0.8rem; margin-bottom: 12px;">Sample · Robot</div>
+              <div style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 12px; font-weight: 600; text-transform: uppercase;">Sample · Robot</div>
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 40px;">
-                <button class="sample-btn active" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 12px; border-radius: 30px; cursor: pointer;">Robot</button>
-                <button class="sample-btn" style="background: transparent; border: 1px solid rgba(255,255,255,0.1); color: #888; padding: 12px; border-radius: 30px; cursor: pointer;">Portfolio</button>
-                <button class="sample-btn" style="background: transparent; border: 1px solid rgba(255,255,255,0.1); color: #888; padding: 12px; border-radius: 30px; cursor: pointer;">Incredible</button>
-                <button class="sample-btn" style="background: transparent; border: 1px solid rgba(255,255,255,0.1); color: #888; padding: 12px; border-radius: 30px; cursor: pointer;">Machines</button>
+                <button class="sample-btn active">Robot</button>
+                <button class="sample-btn">Portfolio</button>
+                <button class="sample-btn">Incredible</button>
+                <button class="sample-btn">Machines</button>
               </div>
               
               <!-- Fake Audio Player -->
               <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 40px;">
                 <!-- Waveform -->
                 <div style="flex: 1; height: 40px; display: flex; align-items: center; gap: 2px;">
-                  <div style="width: 3px; height: 100%; background: #4facfe; border-radius: 2px;"></div>
-                  <div style="width: 100%; height: 2px; background: rgba(255,255,255,0.1); position: relative; margin-left: 8px;">
+                  <div style="width: 3px; height: 100%; background: var(--text-main);"></div>
+                  <div style="width: 100%; height: 2px; background: var(--border-color); position: relative; margin-left: 8px;">
                      <!-- Dashed line representing waveform -->
-                     <div style="position: absolute; top: -10px; width: 100%; display: flex; gap: 4px; overflow: hidden; opacity: 0.2;">
-                        <div style="width: 2px; height: 10px; background: #fff;"></div>
-                        <div style="width: 2px; height: 20px; background: #fff;"></div>
-                        <div style="width: 2px; height: 15px; background: #fff;"></div>
-                        <div style="width: 2px; height: 8px; background: #fff;"></div>
-                        <div style="width: 2px; height: 22px; background: #fff;"></div>
-                        <div style="width: 2px; height: 12px; background: #fff;"></div>
-                        <div style="width: 2px; height: 5px; background: #fff;"></div>
+                     <div style="position: absolute; top: -10px; width: 100%; display: flex; gap: 4px; overflow: hidden; opacity: 1;">
+                        <div style="width: 2px; height: 10px; background: var(--text-main);"></div>
+                        <div style="width: 2px; height: 20px; background: var(--text-main);"></div>
+                        <div style="width: 2px; height: 15px; background: var(--text-main);"></div>
+                        <div style="width: 2px; height: 8px; background: var(--text-main);"></div>
+                        <div style="width: 2px; height: 22px; background: var(--text-main);"></div>
+                        <div style="width: 2px; height: 12px; background: var(--text-main);"></div>
+                        <div style="width: 2px; height: 5px; background: var(--text-main);"></div>
                      </div>
                   </div>
                 </div>
               </div>
               
-              <div style="display: flex; align-items: center; gap: 16px; font-size: 0.8rem; color: #666;">
-                <button style="width: 32px; height: 32px; border-radius: 50%; background: #222; border: none; color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer;">▶</button>
-                <div style="flex: 1; height: 2px; background: rgba(255,255,255,0.1); position: relative;">
-                  <div style="position: absolute; left: 10%; top: -4px; width: 10px; height: 10px; background: #fff; border-radius: 50%;"></div>
+              <div style="display: flex; align-items: center; gap: 16px; font-size: 0.8rem; color: var(--text-main); font-weight: bold;">
+                <button style="width: 32px; height: 32px; border: 2px solid var(--border-color); background: var(--bg-color); color: var(--text-main); display: flex; align-items: center; justify-content: center; cursor: pointer; font-weight: bold;">▶</button>
+                <div style="flex: 1; height: 2px; background: var(--border-color); position: relative;">
+                  <div style="position: absolute; left: 10%; top: -6px; width: 14px; height: 14px; background: var(--text-main); border: 2px solid var(--bg-color);"></div>
                 </div>
                 <div>0:00 / 0:19</div>
               </div>
             </div>
             
             <div style="margin-top: 40px;">
-              <div style="color: #666; font-size: 0.8rem; margin-bottom: 12px;">Voice Focus</div>
-              <div style="display: inline-flex; background: #0a0a0a; border-radius: 6px; padding: 4px; border: 1px solid rgba(255,255,255,0.05);">
-                <button id="vf-off" style="background: transparent; color: #888; border: none; padding: 8px 32px; border-radius: 4px; cursor: pointer; font-weight: 500;">Off</button>
-                <button id="vf-on" style="background: #6f86ff; color: #fff; border: none; padding: 8px 32px; border-radius: 4px; cursor: pointer; font-weight: 500;">On</button>
+              <div style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 12px; font-weight: 600; text-transform: uppercase;">Voice Focus</div>
+              <div style="display: inline-flex; border: 2px solid var(--border-color);">
+                <button id="vf-off" style="background: var(--bg-color); color: var(--text-main); border: none; padding: 8px 32px; cursor: pointer; font-weight: 700; border-right: 2px solid var(--border-color);">OFF</button>
+                <button id="vf-on" style="background: var(--text-main); color: var(--bg-color); border: none; padding: 8px 32px; cursor: pointer; font-weight: 700;">ON</button>
               </div>
             </div>
           </div>
           
           <!-- Right Panel -->
-          <div class="demo-right" style="display: flex; flex-direction: column; justify-content: space-between; border-left: 1px solid rgba(255,255,255,0.05); padding-left: 40px;">
+          <div class="demo-right">
             <div>
-              <div style="color: #666; font-size: 0.8rem; margin-bottom: 16px;">Quail Voice Focus</div>
-              <div id="transcript-box" style="font-size: 1.25rem; line-height: 1.6; color: #e0e0e0; font-family: var(--font-sans);">
+              <div style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 16px; font-weight: 600; text-transform: uppercase;">Quail Voice Focus</div>
+              <div id="transcript-box" style="font-size: 1.25rem; line-height: 1.6; color: var(--text-main); font-family: var(--font-sans); font-weight: 500;">
                 I would like to uh, order a robot, please. 
-                <span class="noise-text" style="color: #d27763; transition: opacity 0.3s ease;">A robot? What do you want with a robot?</span> 
+                <span class="noise-text" style="color: var(--text-muted); text-decoration: line-through; transition: opacity 0.3s ease;">A robot? What do you want with a robot?</span> 
                 Oh, that would be super practical to have a robot. It could be in multiple places at the same time. 
-                <span class="noise-text" style="color: #d27763; transition: opacity 0.3s ease;">You know what's the best place to build your voice agent?</span>
+                <span class="noise-text" style="color: var(--text-muted); text-decoration: line-through; transition: opacity 0.3s ease;">You know what's the best place to build your voice agent?</span>
               </div>
             </div>
             
             <div style="display: flex; gap: 40px; margin-top: 40px;">
               <div>
-                <div style="font-size: 2.5rem; color: #4facfe; font-weight: 300; line-height: 1;">10%</div>
-                <div style="color: #666; font-size: 0.75rem; margin-top: 8px;">Word error rate</div>
+                <div style="font-size: 2.5rem; color: var(--text-main); font-weight: 700; line-height: 1;">10%</div>
+                <div style="color: var(--text-muted); font-size: 0.75rem; margin-top: 8px; font-weight: bold; text-transform: uppercase;">Word error rate</div>
               </div>
               <div>
-                <div id="bg-words-stat" style="font-size: 2.5rem; color: #f0f4f8; font-weight: 300; line-height: 1;">20</div>
-                <div style="color: #666; font-size: 0.75rem; margin-top: 8px;">Background words removed</div>
+                <div id="bg-words-stat" style="font-size: 2.5rem; color: var(--text-main); font-weight: 700; line-height: 1;">20</div>
+                <div style="color: var(--text-muted); font-size: 0.75rem; margin-top: 8px; font-weight: bold; text-transform: uppercase;">Background words removed</div>
               </div>
             </div>
           </div>
