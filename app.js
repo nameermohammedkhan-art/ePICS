@@ -826,18 +826,7 @@ class App {
   }
 
   highlightActiveWord(currentMs) {
-    const wordTokens = this.transcriptDisplay.querySelectorAll('.word-token');
-    wordTokens.forEach((el) => {
-      const idx = parseInt(el.getAttribute('data-word-idx'), 10);
-      if (this.wordsWithTimestamps[idx]) {
-        const { startMs, endMs } = this.wordsWithTimestamps[idx];
-        if (currentMs >= startMs && currentMs <= endMs) {
-          el.classList.add('active-word');
-        } else {
-          el.classList.remove('active-word');
-        }
-      }
-    });
+    let isPauseActive = false;
 
     const pauseTokens = this.transcriptDisplay.querySelectorAll('.pause-tag');
     pauseTokens.forEach((el) => {
@@ -845,8 +834,22 @@ class App {
       const endMs = parseFloat(el.getAttribute('data-end-ms'));
       if (currentMs >= startMs && currentMs <= endMs) {
         el.classList.add('active-word');
+        isPauseActive = true;
       } else {
         el.classList.remove('active-word');
+      }
+    });
+
+    const wordTokens = this.transcriptDisplay.querySelectorAll('.word-token');
+    wordTokens.forEach((el) => {
+      const idx = parseInt(el.getAttribute('data-word-idx'), 10);
+      if (this.wordsWithTimestamps[idx]) {
+        const { startMs, endMs } = this.wordsWithTimestamps[idx];
+        if (!isPauseActive && currentMs >= startMs && currentMs <= endMs) {
+          el.classList.add('active-word');
+        } else {
+          el.classList.remove('active-word');
+        }
       }
     });
   }
