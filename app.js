@@ -141,30 +141,38 @@ class App {
 
     if (vfOffBtn && vfOnBtn) {
       vfOnBtn.addEventListener('click', () => {
+        this.setPauseDetection(true);
+      });
+
+      vfOffBtn.addEventListener('click', () => {
+        this.setPauseDetection(false);
+      });
+    }
+  }
+
+  setPauseDetection(visible) {
+    this.showPauses = visible;
+    
+    const vfOffBtn = document.getElementById('vf-off');
+    const vfOnBtn = document.getElementById('vf-on');
+    
+    if (vfOffBtn && vfOnBtn) {
+      if (visible) {
         vfOnBtn.style.background = 'var(--text-main)';
         vfOnBtn.style.color = 'var(--bg-color)';
         vfOffBtn.style.background = 'var(--bg-color)';
         vfOffBtn.style.color = 'var(--text-main)';
-        
-        this.showPauses = true;
-        if (this.analysisResult) {
-          this.renderAnnotatedTranscript();
-          this.updateMetricsUI();
-        }
-      });
-
-      vfOffBtn.addEventListener('click', () => {
+      } else {
         vfOffBtn.style.background = 'var(--text-main)';
         vfOffBtn.style.color = 'var(--bg-color)';
         vfOnBtn.style.background = 'var(--bg-color)';
         vfOnBtn.style.color = 'var(--text-main)';
-        
-        this.showPauses = false;
-        if (this.analysisResult) {
-          this.renderAnnotatedTranscript();
-          this.updateMetricsUI();
-        }
-      });
+      }
+    }
+    
+    if (this.analysisResult) {
+      this.renderAnnotatedTranscript();
+      this.updateMetricsUI();
     }
   }
 
@@ -404,8 +412,7 @@ class App {
           this.customTranscriptInput.value = text;
         }
         
-        this.updateMetricsUI();
-        this.renderAnnotatedTranscript();
+        this.setPauseDetection(true);
       } else {
         const text = output.text.trim();
         if (text.length > 0) {
@@ -414,6 +421,7 @@ class App {
             this.customTranscriptInput.value = text;
           }
           this.onCustomTranscriptEdited();
+          this.setPauseDetection(true);
         }
       }
       
