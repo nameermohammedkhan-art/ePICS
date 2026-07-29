@@ -174,7 +174,7 @@ class App {
 
       this.processAudioBuffer();
       
-      if (this.customTranscriptInput && !this.customTranscriptInput.value.trim()) {
+      if (!this.customTranscriptInput || !this.customTranscriptInput.value.trim()) {
         this.autoTranscribeAudio();
       }
     } catch (err) {
@@ -267,17 +267,8 @@ class App {
     if (this.isTranscribing) return;
     this.isTranscribing = true;
 
-    const loadingOverlay = document.getElementById('transcription-loading-overlay');
-    const loadingText = document.getElementById('loading-overlay-text');
-
-    if (loadingOverlay) {
-      loadingOverlay.classList.add('active');
-    }
-    if (loadingText) {
-      loadingText.textContent = "⏳ Downloading AI Model (40MB)... This may take a minute.";
-    }
-    if (this.customTranscriptInput) {
-      this.customTranscriptInput.placeholder = "⏳ Downloading AI Model (40MB)... This may take a minute.";
+    if (this.transcriptDisplay) {
+      this.transcriptDisplay.innerHTML = `<span style="color: var(--text-muted); font-size: 0.9em;">⏳ Loading AI transcription model... (This may take a minute on first run)</span>`;
     }
 
     try {
@@ -334,20 +325,11 @@ class App {
       
     } catch (err) {
       console.error("Transcription error:", err);
-      if (loadingText) {
-        loadingText.textContent = "Error transcribing audio. See console.";
-      }
-      if (this.customTranscriptInput) {
-        this.customTranscriptInput.placeholder = "Error transcribing audio. See console.";
+      if (this.transcriptDisplay) {
+        this.transcriptDisplay.innerHTML = `<span style="color: var(--text-muted); font-size: 0.9em;">❌ Error transcribing audio. See console for details.</span>`;
       }
     } finally {
       this.isTranscribing = false;
-      if (loadingOverlay) {
-        loadingOverlay.classList.remove('active');
-      }
-      if (this.customTranscriptInput && !this.customTranscriptInput.value.trim()) {
-        this.customTranscriptInput.placeholder = "Spoken audio text will appear here. You can also type or paste your exact audio transcript text here to sync inline pause tags...";
-      }
     }
   }
 
@@ -370,7 +352,7 @@ class App {
           this.audioBuffer = await this.engine.decodeAudioData(arrayBuffer);
           this.currentFilename.textContent = "microphone_recording.wav";
           this.processAudioBuffer();
-          if (this.customTranscriptInput && !this.customTranscriptInput.value.trim()) {
+          if (!this.customTranscriptInput || !this.customTranscriptInput.value.trim()) {
             this.autoTranscribeAudio();
           }
         };
@@ -395,10 +377,11 @@ class App {
     // Run acoustic & pause analysis
     this.analysisResult = this.engine.analyzeAcoustics(this.audioBuffer);
 
-    // If custom text exists, use it to build exact word timestamps
-    const customText = this.customTranscriptInput ? this.customTranscriptInput.value.trim() : '';
-    if (customText.length > 0) {
-      this.generateWordTimestampsFromText(customText, this.analysisResult.speechSegments);
+    // If we already have exact word timestamps (e.g., from Demo), keep them
+    if (this.wordsWithTimestamps && this.wordsWithTimestamps.length > 0) {
+      // keep existing
+    } else if (this.autoRecognizedText && this.autoRecognizedText.length > 0) {
+      this.generateWordTimestampsFromText(this.autoRecognizedText, this.analysisResult.speechSegments);
     } else {
       this.generateWordTimestampsFromSpeechSegments(this.analysisResult.speechSegments);
     }
