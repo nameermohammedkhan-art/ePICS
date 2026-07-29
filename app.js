@@ -658,33 +658,47 @@ class App {
   }
 
   togglePlayPause() {
-    if (this.isPlaying) {
-      this.pausePlayback();
-    } else {
-      this.startPlayback(this.pausedAt);
+    try {
+      if (this.isPlaying) {
+        this.pausePlayback();
+      } else {
+        this.startPlayback(this.pausedAt);
+      }
+    } catch (e) {
+      alert("Play/Pause error: " + e.message);
     }
   }
 
-  startPlayback(offsetSec = 0) {
-    if (!this.audioBuffer) return;
+  async startPlayback(offsetSec = 0) {
+    try {
+      if (!this.audioBuffer) return;
 
-    const ctx = this.engine.getAudioContext();
-    if (this.audioSource) {
-      this.audioSource.stop();
+      const ctx = this.engine.getAudioContext();
+      if (ctx.state === 'suspended') {
+        await ctx.resume();
+      }
+
+      if (this.audioSource) {
+        try {
+          this.audioSource.stop();
+        } catch (e) {}
+      }
+
+      this.audioSource = ctx.createBufferSource();
+      this.audioSource.buffer = this.audioBuffer;
+      this.audioSource.connect(ctx.destination);
+
+      this.startTime = ctx.currentTime - offsetSec;
+      this.audioSource.start(0, offsetSec);
+      this.isPlaying = true;
+
+      if (this.iconPlay) this.iconPlay.style.display = 'none';
+      if (this.iconPause) this.iconPause.style.display = 'block';
+
+      this.updatePlaybackLoop();
+    } catch (e) {
+      alert("Start playback error: " + e.message);
     }
-
-    this.audioSource = ctx.createBufferSource();
-    this.audioSource.buffer = this.audioBuffer;
-    this.audioSource.connect(ctx.destination);
-
-    this.startTime = ctx.currentTime - offsetSec;
-    this.audioSource.start(0, offsetSec);
-    this.isPlaying = true;
-
-    this.iconPlay.style.display = 'none';
-    this.iconPause.style.display = 'block';
-
-    this.updatePlaybackLoop();
   }
 
   pausePlayback() {
@@ -692,7 +706,9 @@ class App {
     const ctx = this.engine.getAudioContext();
     this.pausedAt = ctx.currentTime - this.startTime;
     if (this.audioSource) {
-      this.audioSource.stop();
+      try {
+        this.audioSource.stop();
+      } catch (e) {}
       this.audioSource = null;
     }
     this.isPlaying = false;
