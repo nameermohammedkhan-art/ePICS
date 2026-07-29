@@ -575,21 +575,21 @@ h1 {
 }
 
 /* Brutalist Seek Slider Styling */
-#seek-slider {
+#seek-slider, #threshold-slider {
   width: 100%;
   -webkit-appearance: none;
   background: transparent;
   cursor: pointer;
 }
-#seek-slider:focus {
+#seek-slider:focus, #threshold-slider:focus {
   outline: none;
 }
-#seek-slider::-webkit-slider-runnable-track {
+#seek-slider::-webkit-slider-runnable-track, #threshold-slider::-webkit-slider-runnable-track {
   width: 100%;
   height: 2px;
   background: var(--border-color);
 }
-#seek-slider::-webkit-slider-thumb {
+#seek-slider::-webkit-slider-thumb, #threshold-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   height: 12px;
   width: 12px;
@@ -598,12 +598,12 @@ h1 {
   margin-top: -5px;
   border-radius: 0;
 }
-#seek-slider::-moz-range-track {
+#seek-slider::-moz-range-track, #threshold-slider::-moz-range-track {
   width: 100%;
   height: 2px;
   background: var(--border-color);
 }
-#seek-slider::-moz-range-thumb {
+#seek-slider::-moz-range-thumb, #threshold-slider::-moz-range-thumb {
   height: 12px;
   width: 12px;
   background: var(--text-main);

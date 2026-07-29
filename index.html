@@ -81,11 +81,21 @@
               <!-- Hidden filename element to prevent script crash -->
               <span id="current-filename" style="display: none;"></span>
             
-            <div style="margin-top: 40px;">
-              <div style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 12px; font-weight: 600; text-transform: uppercase;">Pause Detection</div>
-              <div style="display: inline-flex; border: 2px solid var(--border-color);">
-                <button id="vf-off" style="background: var(--text-main); color: var(--bg-color); border: none; padding: 8px 32px; cursor: pointer; font-weight: 700; border-right: 2px solid var(--border-color);">OFF</button>
-                <button id="vf-on" style="background: var(--bg-color); color: var(--text-main); border: none; padding: 8px 32px; cursor: pointer; font-weight: 700;">ON</button>
+            <div style="margin-top: 40px; display: flex; flex-direction: column; gap: 24px;">
+              <div>
+                <div style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 12px; font-weight: 600; text-transform: uppercase;">Pause Detection</div>
+                <div style="display: inline-flex; border: 2px solid var(--border-color);">
+                  <button id="vf-off" style="background: var(--text-main); color: var(--bg-color); border: none; padding: 8px 32px; cursor: pointer; font-weight: 700; border-right: 2px solid var(--border-color);">OFF</button>
+                  <button id="vf-on" style="background: var(--bg-color); color: var(--text-main); border: none; padding: 8px 32px; cursor: pointer; font-weight: 700;">ON</button>
+                </div>
+              </div>
+              
+              <div>
+                <div style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 12px; font-weight: 600; text-transform: uppercase; display: flex; justify-content: space-between;">
+                  <span>Silence Threshold</span>
+                  <span id="threshold-val">0.015</span>
+                </div>
+                <input type="range" id="threshold-slider" min="0.001" max="0.2" step="0.001" value="0.015" style="width: 100%; -webkit-appearance: none; background: transparent; cursor: pointer;">
               </div>
             </div>
           </div>

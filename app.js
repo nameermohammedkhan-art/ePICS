@@ -49,6 +49,9 @@ class App {
     this.transcriptDisplay = document.getElementById('transcript-box');
     this.showPauses = false;
     this.pauseCountStat = document.getElementById('pause-count-stat');
+    this.silenceThreshold = 0.015;
+    this.thresholdSlider = document.getElementById('threshold-slider');
+    this.thresholdVal = document.getElementById('threshold-val');
     
     // LLM state
     this.llmGenerator = null;
@@ -146,6 +149,19 @@ class App {
 
       vfOffBtn.addEventListener('click', () => {
         this.setPauseDetection(false);
+      });
+    }
+
+    if (this.thresholdSlider) {
+      this.thresholdSlider.addEventListener('input', (e) => {
+        const val = parseFloat(e.target.value);
+        this.silenceThreshold = val;
+        if (this.thresholdVal) {
+          this.thresholdVal.textContent = val.toFixed(3);
+        }
+        if (this.audioBuffer) {
+          this.processAudioBuffer();
+        }
       });
     }
   }
@@ -477,7 +493,9 @@ class App {
     if (!this.audioBuffer) return;
 
     // Run acoustic & pause analysis
-    this.analysisResult = this.engine.analyzeAcoustics(this.audioBuffer);
+    this.analysisResult = this.engine.analyzeAcoustics(this.audioBuffer, {
+      silenceThreshold: this.silenceThreshold
+    });
 
     // If we already have exact word timestamps (e.g., from Demo), keep them
     if (this.wordsWithTimestamps && this.wordsWithTimestamps.length > 0) {
@@ -677,7 +695,7 @@ class App {
       const barHeight = Math.max(2, rms * height * 2.5);
       const y = (height - barHeight) / 2;
 
-      const isSpeech = rms >= this.engine.silenceThreshold;
+      const isSpeech = rms >= this.silenceThreshold;
       this.ctx.fillStyle = isSpeech ? 'var(--text-main)' : 'var(--pause-color)';
       this.ctx.fillRect(x, y, Math.max(1, frameWidth - 0.5), barHeight);
     }
