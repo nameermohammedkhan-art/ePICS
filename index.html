@@ -61,31 +61,7 @@
         </div>
       </section>
 
-      <!-- Player & Waveform Visualizer -->
-      <section class="card player-section" id="player-card" style="display: none;">
-        <div class="player-header">
-          <div class="file-meta">
-            <span id="current-filename" class="filename">raju_sample_audio.wav</span>
-            <span id="current-duration" class="duration-tag">00:00.000 (0 ms)</span>
-          </div>
-          <div class="player-controls">
-            <button id="btn-play-pause" class="btn btn-icon" title="Play / Pause">
-              <svg id="icon-play" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-              <svg id="icon-pause" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="display: none;"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
-            </button>
-            <span id="play-time" class="time-code">00:00.000</span>
-          </div>
-        </div>
 
-        <div class="waveform-container">
-          <canvas id="waveform-canvas"></canvas>
-          <div class="waveform-legend">
-            <span class="legend-item"><span class="color-dot speech-dot"></span> Active Speech</span>
-            <span class="legend-item"><span class="color-dot pause-dot"></span> Pause / Silence</span>
-            <span class="legend-item"><span class="color-dot noise-dot"></span> Background Noise</span>
-          </div>
-        </div>
-      </section>
 
       <!-- Voice Focus Demo Section -->
       <section class="spin-section">
@@ -100,40 +76,34 @@
           <div class="demo-left">
             <div>
               <div style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 12px; font-weight: 600; text-transform: uppercase;">Sample · Robot</div>
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 40px;">
-                <button class="sample-btn active">Robot</button>
-                <button class="sample-btn">Portfolio</button>
-                <button class="sample-btn">Incredible</button>
-                <button class="sample-btn">Machines</button>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px;">
+                <button class="sample-btn active" data-type="robot">Robot</button>
+                <button class="sample-btn" data-type="portfolio">Portfolio</button>
+                <button class="sample-btn" data-type="incredible">Incredible</button>
+                <button class="sample-btn" data-type="machines">Machines</button>
               </div>
               
-              <!-- Fake Audio Player -->
-              <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 40px;">
-                <!-- Waveform -->
-                <div style="flex: 1; height: 40px; display: flex; align-items: center; gap: 2px;">
-                  <div style="width: 3px; height: 100%; background: var(--text-main);"></div>
-                  <div style="width: 100%; height: 2px; background: var(--border-color); position: relative; margin-left: 8px;">
-                     <!-- Dashed line representing waveform -->
-                     <div style="position: absolute; top: -10px; width: 100%; display: flex; gap: 4px; overflow: hidden; opacity: 1;">
-                        <div style="width: 2px; height: 10px; background: var(--text-main);"></div>
-                        <div style="width: 2px; height: 20px; background: var(--text-main);"></div>
-                        <div style="width: 2px; height: 15px; background: var(--text-main);"></div>
-                        <div style="width: 2px; height: 8px; background: var(--text-main);"></div>
-                        <div style="width: 2px; height: 22px; background: var(--text-main);"></div>
-                        <div style="width: 2px; height: 12px; background: var(--text-main);"></div>
-                        <div style="width: 2px; height: 5px; background: var(--text-main);"></div>
-                     </div>
-                  </div>
+              <!-- Waveform Canvas -->
+              <div class="waveform-container" style="margin-bottom: 24px;">
+                <canvas id="waveform-canvas" style="width: 100%; height: 50px; border: 2px solid var(--border-color); background: var(--bg-color); cursor: pointer;"></canvas>
+              </div>
+              
+              <!-- Real Player Controls -->
+              <div style="display: flex; align-items: center; gap: 16px; font-size: 0.85rem; color: var(--text-main); font-weight: bold; margin-bottom: 40px;">
+                <button id="btn-play-pause" style="width: 32px; height: 32px; border: 2px solid var(--border-color); background: var(--bg-color); color: var(--text-main); display: flex; align-items: center; justify-content: center; cursor: pointer; font-weight: bold;">
+                  <svg id="icon-play" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                  <svg id="icon-pause" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="display: none;"><rect x="4" y="4" width="16" height="16"/></svg>
+                </button>
+                <div style="flex: 1; display: flex; align-items: center;">
+                  <input type="range" id="seek-slider" min="0" max="100" value="0" step="0.1" style="width: 100%; -webkit-appearance: none; background: transparent; cursor: pointer;">
+                </div>
+                <div style="font-family: var(--font-mono); font-size: 0.8rem; white-space: nowrap;">
+                  <span id="play-time">0:00</span> / <span id="current-duration">0:00</span>
                 </div>
               </div>
               
-              <div style="display: flex; align-items: center; gap: 16px; font-size: 0.8rem; color: var(--text-main); font-weight: bold;">
-                <button style="width: 32px; height: 32px; border: 2px solid var(--border-color); background: var(--bg-color); color: var(--text-main); display: flex; align-items: center; justify-content: center; cursor: pointer; font-weight: bold;">▶</button>
-                <div style="flex: 1; height: 2px; background: var(--border-color); position: relative;">
-                  <div style="position: absolute; left: 10%; top: -6px; width: 14px; height: 14px; background: var(--text-main); border: 2px solid var(--bg-color);"></div>
-                </div>
-                <div>0:00 / 0:19</div>
-              </div>
+              <!-- Hidden filename element to prevent script crash -->
+              <span id="current-filename" style="display: none;"></span>
             </div>
             
             <div style="margin-top: 40px;">

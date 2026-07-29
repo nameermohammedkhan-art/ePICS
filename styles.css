@@ -573,3 +573,41 @@ h1 {
   background: var(--text-main);
   color: var(--bg-color);
 }
+
+/* Brutalist Seek Slider Styling */
+#seek-slider {
+  width: 100%;
+  -webkit-appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+#seek-slider:focus {
+  outline: none;
+}
+#seek-slider::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 2px;
+  background: var(--border-color);
+}
+#seek-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  height: 12px;
+  width: 12px;
+  background: var(--text-main);
+  border: 2px solid var(--bg-color);
+  margin-top: -5px;
+  border-radius: 0;
+}
+#seek-slider::-moz-range-track {
+  width: 100%;
+  height: 2px;
+  background: var(--border-color);
+}
+#seek-slider::-moz-range-thumb {
+  height: 12px;
+  width: 12px;
+  background: var(--text-main);
+  border: 2px solid var(--bg-color);
+  border-radius: 0;
+}
+

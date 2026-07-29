@@ -32,19 +32,19 @@ class App {
     this.dropzone = document.getElementById('dropzone');
     this.fileInput = document.getElementById('audio-file-input');
     this.btnBrowseFile = document.getElementById('btn-browse-file');
-    this.btnLoadDemo = document.getElementById('btn-load-demo');
+    this.sampleBtns = document.querySelectorAll('.sample-btn');
     this.btnRecordMic = document.getElementById('btn-record-mic');
 
-    this.playerCard = document.getElementById('player-card');
+    this.canvas = document.getElementById('waveform-canvas');
+    this.ctx = this.canvas.getContext('2d');
+
     this.btnPlayPause = document.getElementById('btn-play-pause');
     this.iconPlay = document.getElementById('icon-play');
     this.iconPause = document.getElementById('icon-pause');
     this.playTime = document.getElementById('play-time');
     this.currentFilename = document.getElementById('current-filename');
     this.currentDuration = document.getElementById('current-duration');
-
-    this.canvas = document.getElementById('waveform-canvas');
-    this.ctx = this.canvas.getContext('2d');
+    this.seekSlider = document.getElementById('seek-slider');
 
     this.transcriptDisplay = document.getElementById('transcript-box');
     this.showPauses = false;
@@ -57,6 +57,9 @@ class App {
     this.initSpeechRecognition();
     this.resizeCanvas();
     window.addEventListener('resize', () => this.resizeCanvas());
+
+    // Auto-load robot demo on startup
+    this.loadDemoAudio('robot');
   }
 
   initSpeechRecognition() {
@@ -107,7 +110,17 @@ class App {
     });
 
     // Buttons
-    this.btnLoadDemo.addEventListener('click', () => this.loadDemoRajuAudio());
+    if (this.sampleBtns) {
+      this.sampleBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const type = btn.getAttribute('data-type');
+          this.sampleBtns.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          this.loadDemoAudio(type);
+        });
+      });
+    }
+
     this.btnRecordMic.addEventListener('click', (e) => {
       e.stopPropagation();
       this.toggleMicRecording();
@@ -115,6 +128,15 @@ class App {
 
     this.btnPlayPause.addEventListener('click', () => this.togglePlayPause());
     this.canvas.addEventListener('click', (e) => this.seekFromCanvas(e));
+
+    if (this.seekSlider) {
+      this.seekSlider.addEventListener('input', (e) => {
+        if (!this.audioBuffer) return;
+        const ratio = parseFloat(e.target.value) / 100;
+        const ms = ratio * (this.audioBuffer.duration * 1000);
+        this.seekToMs(ms);
+      });
+    }
 
     const vfOffBtn = document.getElementById('vf-off');
     const vfOnBtn = document.getElementById('vf-on');
@@ -145,7 +167,7 @@ class App {
   resizeCanvas() {
     const rect = this.canvas.parentElement.getBoundingClientRect();
     this.canvas.width = rect.width;
-    this.canvas.height = 120;
+    this.canvas.height = 50;
     if (this.analysisResult) {
       this.renderWaveform();
     }
@@ -184,79 +206,145 @@ class App {
     }
   }
 
-  async loadDemoRajuAudio() {
+  async loadDemoAudio(type = 'robot') {
     const ctx = this.engine.getAudioContext();
     if (ctx.state === 'suspended') {
       await ctx.resume();
     }
     const sampleRate = ctx.sampleRate;
 
-    // Create synthetic audio buffer matching prompt details:
-    // "My name is Raju (pause detected: 17 ms). I am a football (pause detected: 13 ms) player."
-    const totalDurationSec = 3.5;
+    let totalDurationSec = 3.5;
+    let filename = "robot_sample.wav";
+    let speechSegments = [];
+    let words = [];
+
+    const msToSample = (ms) => Math.floor((ms / 1000) * sampleRate);
+
+    if (type === 'robot') {
+      totalDurationSec = 3.5;
+      filename = "robot_sample.wav";
+      speechSegments = [
+        { start: 50, end: 300, freq: 180 },   // My
+        { start: 340, end: 600, freq: 210 },  // name
+        { start: 630, end: 800, freq: 195 },  // is
+        { start: 840, end: 1200, freq: 175 }, // Raju
+        { start: 1217, end: 1400, freq: 200 }, // I
+        { start: 1440, end: 1650, freq: 190 }, // am
+        { start: 1680, end: 1780, freq: 185 }, // a
+        { start: 1820, end: 2400, freq: 170 }, // football
+        { start: 2413, end: 3100, freq: 180 }  // player
+      ];
+      words = [
+        { word: "My", startMs: 50, endMs: 300 },
+        { word: "name", startMs: 340, endMs: 600 },
+        { word: "is", startMs: 630, endMs: 800 },
+        { word: "Raju", startMs: 840, endMs: 1200 },
+        { word: "I", startMs: 1217, endMs: 1400 },
+        { word: "am", startMs: 1440, endMs: 1650 },
+        { word: "a", startMs: 1680, endMs: 1780 },
+        { word: "football", startMs: 1820, endMs: 2400 },
+        { word: "player.", startMs: 2413, endMs: 3100 }
+      ];
+    } else if (type === 'portfolio') {
+      totalDurationSec = 4.0;
+      filename = "portfolio_sample.wav";
+      speechSegments = [
+        { start: 50, end: 250, freq: 220 },   // This
+        { start: 280, end: 400, freq: 200 },  // is
+        { start: 420, end: 600, freq: 210 },  // my
+        { start: 620, end: 1000, freq: 180 }, // audio
+        { start: 1020, end: 1600, freq: 175 }, // portfolio
+        { start: 1650, end: 1800, freq: 200 }, // I
+        { start: 1820, end: 2100, freq: 190 }, // hope
+        { start: 2125, end: 2300, freq: 185 }, // you
+        { start: 2325, end: 2700, freq: 170 }  // like it
+      ];
+      words = [
+        { word: "This", startMs: 50, endMs: 250 },
+        { word: "is", startMs: 280, endMs: 400 },
+        { word: "my", startMs: 420, endMs: 600 },
+        { word: "audio", startMs: 620, endMs: 1000 },
+        { word: "portfolio.", startMs: 1020, endMs: 1600 },
+        { word: "I", startMs: 1650, endMs: 1800 },
+        { word: "hope", startMs: 1820, endMs: 2100 },
+        { word: "you", startMs: 2125, endMs: 2300 },
+        { word: "like it.", startMs: 2325, endMs: 2700 }
+      ];
+    } else if (type === 'incredible') {
+      totalDurationSec = 4.0;
+      filename = "incredible_sample.wav";
+      speechSegments = [
+        { start: 50, end: 350, freq: 190 },   // That
+        { start: 380, end: 500, freq: 200 },  // is
+        { start: 520, end: 900, freq: 210 },  // simply
+        { start: 980, end: 1600, freq: 170 }, // incredible
+        { start: 1680, end: 2000, freq: 180 }, // Look
+        { start: 2020, end: 2200, freq: 190 }, // at
+        { start: 2210, end: 2500, freq: 185 }, // those
+        { start: 2515, end: 3200, freq: 160 }  // machines
+      ];
+      words = [
+        { word: "That", startMs: 50, endMs: 350 },
+        { word: "is", startMs: 380, endMs: 500 },
+        { word: "simply", startMs: 520, endMs: 900 },
+        { word: "incredible.", startMs: 980, endMs: 1600 },
+        { word: "Look", startMs: 1680, endMs: 2000 },
+        { word: "at", startMs: 2020, endMs: 2200 },
+        { word: "those", startMs: 2210, endMs: 2500 },
+        { word: "machines.", startMs: 2515, endMs: 3200 }
+      ];
+    } else if (type === 'machines') {
+      totalDurationSec = 4.5;
+      filename = "machines_sample.wav";
+      speechSegments = [
+        { start: 50, end: 300, freq: 170 },   // The
+        { start: 330, end: 800, freq: 180 },  // machines
+        { start: 830, end: 1000, freq: 190 }, // are
+        { start: 1020, end: 1500, freq: 200 }, // running
+        { start: 1620, end: 1850, freq: 195 }, // We
+        { start: 1870, end: 2150, freq: 190 }, // must
+        { start: 2165, end: 2600, freq: 185 }, // monitor
+        { start: 2615, end: 3000, freq: 175 }  // them
+      ];
+      words = [
+        { word: "The", startMs: 50, endMs: 300 },
+        { word: "machines", startMs: 330, endMs: 800 },
+        { word: "are", startMs: 830, endMs: 1000 },
+        { word: "running.", startMs: 1020, endMs: 1500 },
+        { word: "We", startMs: 1620, endMs: 1850 },
+        { word: "must", startMs: 1870, endMs: 2150 },
+        { word: "monitor", startMs: 2165, endMs: 2600 },
+        { word: "them.", startMs: 2615, endMs: 3000 }
+      ];
+    }
+
     const length = Math.floor(sampleRate * totalDurationSec);
     const audioBuffer = ctx.createBuffer(1, length, sampleRate);
     const channelData = audioBuffer.getChannelData(0);
 
-    const msToSample = (ms) => Math.floor((ms / 1000) * sampleRate);
-
     // Generate speech tones
-    const addSpeechSegment = (startMs, endMs, baseFreq) => {
-      const startS = msToSample(startMs);
-      const endS = msToSample(endMs);
+    speechSegments.forEach(seg => {
+      const startS = msToSample(seg.start);
+      const endS = msToSample(seg.end);
       for (let i = startS; i < endS && i < length; i++) {
         const t = (i - startS) / sampleRate;
         const envelope = Math.sin(Math.PI * (i - startS) / (endS - startS));
-        const wave = 0.3 * Math.sin(2 * Math.PI * baseFreq * t) +
-                     0.15 * Math.sin(2 * Math.PI * (baseFreq * 2) * t) +
-                     0.08 * Math.sin(2 * Math.PI * (baseFreq * 3) * t);
+        const wave = 0.3 * Math.sin(2 * Math.PI * seg.freq * t) +
+                     0.15 * Math.sin(2 * Math.PI * (seg.freq * 2) * t) +
+                     0.08 * Math.sin(2 * Math.PI * (seg.freq * 3) * t);
         channelData[i] = wave * envelope;
       }
-    };
+    });
 
-    // Speech 1: "My name is Raju" (0 to 1200ms)
-    addSpeechSegment(50, 300, 180);   // My
-    addSpeechSegment(340, 600, 210);  // name
-    addSpeechSegment(630, 800, 195);  // is
-    addSpeechSegment(840, 1200, 175); // Raju
-
-    // Pause 1: 1200ms to 1217ms (17ms pause)
-
-    // Speech 2: "I am a football" (1217ms to 2400ms)
-    addSpeechSegment(1217, 1400, 200); // I
-    addSpeechSegment(1440, 1650, 190); // am
-    addSpeechSegment(1680, 1780, 185); // a
-    addSpeechSegment(1820, 2400, 170); // football
-
-    // Pause 2: 2400ms to 2413ms (13ms pause)
-
-    // Speech 3: "player." (2413ms to 3100ms)
-    addSpeechSegment(2413, 3100, 180); // player
-
-    // Reference Words
-    this.wordsWithTimestamps = [
-      { word: "My", startMs: 50, endMs: 300 },
-      { word: "name", startMs: 340, endMs: 600 },
-      { word: "is", startMs: 630, endMs: 800 },
-      { word: "Raju", startMs: 840, endMs: 1200 },
-      { word: "I", startMs: 1217, endMs: 1400 },
-      { word: "am", startMs: 1440, endMs: 1650 },
-      { word: "a", startMs: 1680, endMs: 1780 },
-      { word: "football", startMs: 1820, endMs: 2400 },
-      { word: "player.", startMs: 2413, endMs: 3100 }
-    ];
-
+    this.wordsWithTimestamps = words;
     this.audioBuffer = audioBuffer;
-    this.currentFilename.textContent = "raju_sample_audio.wav (Demo)";
     
-    // Set slider to 10ms for Raju demo so 17ms and 13ms pauses display as specified
-    this.displayMinPauseMs = 10;
-    if (this.sliderMinPause) this.sliderMinPause.value = 10;
-    if (this.valMinPauseLabel) this.valMinPauseLabel.textContent = "10 ms";
-
-    if (this.customTranscriptInput) {
-      this.customTranscriptInput.value = "My name is Raju. I am a football player.";
+    if (this.currentFilename) {
+      this.currentFilename.textContent = filename;
     }
+    
+    // Set slider to 10ms for demo so 17ms and 13ms pauses display as specified
+    this.displayMinPauseMs = 10;
 
     this.processAudioBuffer();
   }
@@ -388,8 +476,12 @@ class App {
     this.renderPauseLocationsTable();
     this.renderWaveform();
 
-    this.playerCard.style.display = 'block';
-    this.currentDuration.textContent = `${this.formatTimeMs(this.analysisResult.durationMs)} (${this.analysisResult.durationMs} ms)`;
+    if (this.playerCard) {
+      this.playerCard.style.display = 'block';
+    }
+    if (this.currentDuration) {
+      this.currentDuration.textContent = this.formatTimeShort(this.analysisResult.durationMs);
+    }
     this.stopPlayback();
   }
 
@@ -546,18 +638,18 @@ class App {
     for (let f = 0; f < numFrames; f++) {
       const x = f * frameWidth;
       const rms = frameEnergies[f];
-      const barHeight = Math.max(4, rms * height * 2.5);
+      const barHeight = Math.max(2, rms * height * 2.5);
       const y = (height - barHeight) / 2;
 
       const isSpeech = rms >= this.engine.silenceThreshold;
-      this.ctx.fillStyle = isSpeech ? '#10b981' : '#f59e0b';
+      this.ctx.fillStyle = isSpeech ? 'var(--text-main)' : 'var(--pause-color)';
       this.ctx.fillRect(x, y, Math.max(1, frameWidth - 0.5), barHeight);
     }
 
     const currentMs = this.getCurrentPlaybackMs();
     const playheadX = (currentMs / durationMs) * width;
     
-    this.ctx.strokeStyle = '#00f2fe';
+    this.ctx.strokeStyle = 'var(--text-main)';
     this.ctx.lineWidth = 2;
     this.ctx.beginPath();
     this.ctx.moveTo(playheadX, 0);
@@ -615,17 +707,30 @@ class App {
   stopPlayback() {
     this.pausePlayback();
     this.pausedAt = 0;
-    this.playTime.textContent = "00:00.000";
+    if (this.playTime) {
+      this.playTime.textContent = "0:00";
+    }
+    if (this.seekSlider) {
+      this.seekSlider.value = 0;
+    }
     this.renderWaveform();
   }
 
   seekToMs(ms) {
     const sec = ms / 1000;
     this.pausedAt = sec;
+    
+    if (this.seekSlider && this.audioBuffer) {
+      const duration = this.audioBuffer.duration;
+      this.seekSlider.value = (ms / (duration * 1000)) * 100;
+    }
+
     if (this.isPlaying) {
       this.startPlayback(sec);
     } else {
-      this.playTime.textContent = this.formatTimeMs(ms);
+      if (this.playTime) {
+        this.playTime.textContent = this.formatTimeShort(ms);
+      }
       this.renderWaveform();
       this.highlightActiveWord(ms);
     }
@@ -654,9 +759,17 @@ class App {
   updatePlaybackLoop() {
     if (!this.isPlaying) return;
     const currentMs = this.getCurrentPlaybackMs();
-    this.playTime.textContent = this.formatTimeMs(currentMs);
+    if (this.playTime) {
+      this.playTime.textContent = this.formatTimeShort(currentMs);
+    }
     this.renderWaveform();
     this.highlightActiveWord(currentMs);
+    
+    if (this.seekSlider && this.audioBuffer) {
+      const duration = this.audioBuffer.duration;
+      this.seekSlider.value = (currentMs / (duration * 1000)) * 100;
+    }
+
     this.animFrameId = requestAnimationFrame(() => this.updatePlaybackLoop());
   }
 
@@ -681,6 +794,13 @@ class App {
     const secs = totalSec % 60;
     const millis = Math.floor(ms % 1000);
     return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}.${String(millis).padStart(3, '0')}`;
+  }
+
+  formatTimeShort(ms) {
+    const totalSec = Math.floor(ms / 1000);
+    const mins = Math.floor(totalSec / 60);
+    const secs = totalSec % 60;
+    return `${mins}:${String(secs).padStart(2, '0')}`;
   }
 
   copyTranscript() {
