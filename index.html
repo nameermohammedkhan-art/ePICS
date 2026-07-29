@@ -91,7 +91,7 @@
       <section class="spin-section">
         <h2 style="font-size: 2.2rem; margin-bottom: 16px;">Give it a spin</h2>
         <p style="color: var(--text-muted); max-width: 600px; margin-bottom: 32px; line-height: 1.6;">
-          Voice Focus removes background noise and other voices. The transcript keeps only what the speaker said. Turn it on and off to hear the difference.
+          Pause Detection finds millisecond pauses in speech. Turn it on to reveal hidden micro-pauses in the transcript.
         </p>
         
         <div class="demo-container">
@@ -137,7 +137,7 @@
             </div>
             
             <div style="margin-top: 40px;">
-              <div style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 12px; font-weight: 600; text-transform: uppercase;">Voice Focus</div>
+              <div style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 12px; font-weight: 600; text-transform: uppercase;">Pause Detection</div>
               <div style="display: inline-flex; border: 2px solid var(--border-color);">
                 <button id="vf-off" style="background: var(--bg-color); color: var(--text-main); border: none; padding: 8px 32px; cursor: pointer; font-weight: 700; border-right: 2px solid var(--border-color);">OFF</button>
                 <button id="vf-on" style="background: var(--text-main); color: var(--bg-color); border: none; padding: 8px 32px; cursor: pointer; font-weight: 700;">ON</button>
@@ -148,7 +148,7 @@
           <!-- Right Panel -->
           <div class="demo-right">
             <div>
-              <div style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 16px; font-weight: 600; text-transform: uppercase;">Quail Voice Focus</div>
+              <div style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 16px; font-weight: 600; text-transform: uppercase;">Pause Detection Results</div>
               <div id="transcript-box" style="font-size: 1.25rem; line-height: 1.6; color: var(--text-main); font-family: var(--font-sans); font-weight: 500;">
                 I would like to uh, order a robot, please. 
                 <span class="noise-text" style="color: var(--text-muted); text-decoration: line-through; transition: opacity 0.3s ease;">A robot? What do you want with a robot?</span> 
@@ -171,150 +171,7 @@
         </div>
       </section>
 
-      <!-- Metrics Scorecard Grid -->
-      <section class="metrics-grid" id="metrics-grid">
-        <div class="metric-card">
-          <div class="metric-icon speech-icon">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
-          </div>
-          <div class="metric-data">
-            <span class="metric-label">1. Total Speech Time</span>
-            <div class="metric-value" id="val-speech-time">0 <span class="unit">ms</span></div>
-            <span class="metric-sub" id="sub-speech-time">0.00 seconds</span>
-          </div>
-        </div>
 
-        <div class="metric-card">
-          <div class="metric-icon silence-icon">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/></svg>
-          </div>
-          <div class="metric-data">
-            <span class="metric-label">2. Total Silence Time</span>
-            <div class="metric-value" id="val-silence-time">0 <span class="unit">ms</span></div>
-            <span class="metric-sub" id="sub-silence-time">Includes bg noises</span>
-          </div>
-        </div>
-
-        <div class="metric-card">
-          <div class="metric-icon syllables-icon">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-          </div>
-          <div class="metric-data">
-            <span class="metric-label">3. Syllables</span>
-            <div class="metric-value" id="val-syllables">0</div>
-            <span class="metric-sub">Phoneme count</span>
-          </div>
-        </div>
-
-        <div class="metric-card">
-          <div class="metric-icon words-icon">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-          </div>
-          <div class="metric-data">
-            <span class="metric-label">4. Words</span>
-            <div class="metric-value" id="val-words">0</div>
-            <span class="metric-sub">Total word tokens</span>
-          </div>
-        </div>
-
-        <div class="metric-card">
-          <div class="metric-icon pause-icon">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
-          </div>
-          <div class="metric-data">
-            <span class="metric-label">5. Total Pauses</span>
-            <div class="metric-value" id="val-pauses">0</div>
-            <span class="metric-sub" id="sub-pauses">Avg: 0 ms</span>
-          </div>
-        </div>
-
-        <div class="metric-card">
-          <div class="metric-icon bg-icon">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12h20M2 6h20M2 18h20"/></svg>
-          </div>
-          <div class="metric-data">
-            <span class="metric-label">Background Events</span>
-            <div class="metric-value" id="val-bg-events">0</div>
-            <span class="metric-sub" id="sub-bg-events">Noises / Clicks / Hum</span>
-          </div>
-        </div>
-      </section>
-
-      <!-- Annotated Transcript Panel -->
-      <section class="card transcript-section">
-        <div class="section-header">
-          <div>
-            <h2>Inline Annotated Transcript</h2>
-            <p class="section-subtitle">Transcript with inline millisecond pause indicators and detected background events</p>
-          </div>
-          <div class="action-buttons">
-
-            <button id="btn-copy-transcript" class="btn btn-sm btn-secondary">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-              Copy Text
-            </button>
-            <button id="btn-export-json" class="btn btn-sm btn-secondary">Export JSON</button>
-          </div>
-        </div>
-
-        <div class="pause-filter-bar">
-          <div class="filter-group">
-            <label for="slider-min-pause">⚙️ Pause Filter (Hide micro-gaps &lt; <span id="val-min-pause-label">100 ms</span>):</label>
-            <input type="range" id="slider-min-pause" min="10" max="1000" step="10" value="100" class="filter-range">
-          </div>
-        </div>
-
-        <div class="transcript-editor-container" style="position: relative;">
-          
-          <div id="transcription-loading-overlay" class="transcription-loading-overlay">
-            <div class="spinner"></div>
-            <div id="loading-overlay-text" class="loading-overlay-text">⏳ Downloading AI Model (40MB)... This may take a minute.</div>
-          </div>
-
-          <div id="transcript-display" class="transcript-display">
-            <p class="placeholder-text">Load an audio file or click <strong>"Load Raju Demo Audio"</strong> to generate transcript with inline pause markers.</p>
-          </div>
-          
-          <div class="transcript-text-input-area" style="margin-top: 16px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 14px;">
-            <label for="custom-transcript-input" style="font-size: 0.85rem; color: var(--accent-cyan); display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; font-weight: 600;">
-              <span>📝 Audio Spoken Text / Transcript:</span>
-              <span style="font-size: 0.78rem; font-weight: normal; color: var(--text-muted);">Auto-aligned to detected speech &amp; pause timestamps</span>
-            </label>
-            <textarea id="custom-transcript-input" rows="3" class="transcript-textarea" placeholder="Spoken audio text will appear here. You can also type or paste your exact audio transcript text here to sync inline pause tags..."></textarea>
-          </div>
-        </div>
-      </section>
-
-      <!-- 6. Location of Pauses Table -->
-      <section class="card pause-locations-section">
-        <div class="section-header">
-          <div>
-            <h2>6. Location of Pauses & Acoustic Events</h2>
-            <p class="section-subtitle">Detailed breakdown of exact start/end timestamps (ms), durations (ms), and acoustic classifications</p>
-          </div>
-        </div>
-
-        <div class="table-responsive">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Start (ms)</th>
-                <th>End (ms)</th>
-                <th>Duration (ms)</th>
-                <th>Acoustic Classification</th>
-                <th>Timestamp Code</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody id="pause-table-body">
-              <tr>
-                <td colspan="7" class="text-center empty-cell">No pause data loaded yet. Upload audio or click demo above.</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
     </main>
   </div>
 

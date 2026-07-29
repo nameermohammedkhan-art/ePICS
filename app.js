@@ -46,34 +46,8 @@ class App {
     this.canvas = document.getElementById('waveform-canvas');
     this.ctx = this.canvas.getContext('2d');
 
-    // Metrics DOM
-    this.valSpeechTime = document.getElementById('val-speech-time');
-    this.subSpeechTime = document.getElementById('sub-speech-time');
-    this.valSilenceTime = document.getElementById('val-silence-time');
-    this.valSyllables = document.getElementById('val-syllables');
-    this.valWords = document.getElementById('val-words');
-    this.valPauses = document.getElementById('val-pauses');
-    this.subPauses = document.getElementById('sub-pauses');
-    this.valBgEvents = document.getElementById('val-bg-events');
-    this.subBgEvents = document.getElementById('sub-bg-events');
-
-    this.transcriptDisplay = document.getElementById('transcript-display');
-    this.customTranscriptInput = document.getElementById('custom-transcript-input');
-    this.pauseTableBody = document.getElementById('pause-table-body');
-
-    // Filter controls
-    this.sliderMinPause = document.getElementById('slider-min-pause');
-    this.valMinPauseLabel = document.getElementById('val-min-pause-label');
-
-    this.btnTranscribeSpeech = document.getElementById('btn-transcribe-speech');
-    this.btnCopyTranscript = document.getElementById('btn-copy-transcript');
-    this.btnExportJson = document.getElementById('btn-export-json');
-
-    // Pipeline DOM
-    this.btnRunPipeline = document.getElementById('btn-run-pipeline');
-    this.toggleVoiceFocus = document.getElementById('toggle-voice-focus');
-    this.pipelineSttOutput = document.getElementById('pipeline-stt-output');
-    this.pipelineLlmOutput = document.getElementById('pipeline-llm-output');
+    this.transcriptDisplay = document.getElementById('transcript-box');
+    this.showPauses = false;
     
     // LLM state
     this.llmGenerator = null;
@@ -139,61 +113,31 @@ class App {
       this.toggleMicRecording();
     });
 
-    if (this.btnTranscribeSpeech) {
-      this.btnTranscribeSpeech.addEventListener('click', () => this.autoTranscribeAudio());
-    }
-
     this.btnPlayPause.addEventListener('click', () => this.togglePlayPause());
     this.canvas.addEventListener('click', (e) => this.seekFromCanvas(e));
 
-    this.btnCopyTranscript.addEventListener('click', () => this.copyTranscript());
-    this.btnExportJson.addEventListener('click', () => this.exportJsonReport());
-
-    if (this.customTranscriptInput) {
-      this.customTranscriptInput.addEventListener('input', () => {
-        this.onCustomTranscriptEdited();
-      });
-    }
-
     const vfOffBtn = document.getElementById('vf-off');
     const vfOnBtn = document.getElementById('vf-on');
-    const noiseTexts = document.querySelectorAll('.noise-text');
-    const bgWordsStat = document.getElementById('bg-words-stat');
 
     if (vfOffBtn && vfOnBtn) {
       vfOnBtn.addEventListener('click', () => {
-        vfOnBtn.style.background = '#6f86ff';
-        vfOnBtn.style.color = '#fff';
-        vfOffBtn.style.background = 'transparent';
-        vfOffBtn.style.color = '#888';
+        vfOnBtn.style.background = 'var(--text-main)';
+        vfOnBtn.style.color = 'var(--bg-color)';
+        vfOffBtn.style.background = 'var(--bg-color)';
+        vfOffBtn.style.color = 'var(--text-main)';
         
-        noiseTexts.forEach(el => el.style.opacity = '0.1');
-        if (bgWordsStat) bgWordsStat.textContent = '20';
+        this.showPauses = true;
+        if (this.analysisResult) this.renderAnnotatedTranscript();
       });
 
       vfOffBtn.addEventListener('click', () => {
-        vfOffBtn.style.background = '#333';
-        vfOffBtn.style.color = '#fff';
-        vfOnBtn.style.background = 'transparent';
-        vfOnBtn.style.color = '#888';
+        vfOffBtn.style.background = 'var(--text-main)';
+        vfOffBtn.style.color = 'var(--bg-color)';
+        vfOnBtn.style.background = 'var(--bg-color)';
+        vfOnBtn.style.color = 'var(--text-main)';
         
-        noiseTexts.forEach(el => el.style.opacity = '1');
-        if (bgWordsStat) bgWordsStat.textContent = '0';
-      });
-    }
-
-    // Filter Slider
-    if (this.sliderMinPause) {
-      this.sliderMinPause.addEventListener('input', (e) => {
-        this.displayMinPauseMs = parseInt(e.target.value, 10);
-        if (this.valMinPauseLabel) {
-          this.valMinPauseLabel.textContent = `${this.displayMinPauseMs} ms`;
-        }
-        if (this.analysisResult) {
-          this.updateMetricsUI();
-          this.renderAnnotatedTranscript();
-          this.renderPauseLocationsTable();
-        }
+        this.showPauses = false;
+        if (this.analysisResult) this.renderAnnotatedTranscript();
       });
     }
   }
@@ -566,36 +510,11 @@ class App {
   }
 
   updateMetricsUI() {
-    const res = this.analysisResult;
-    const fullText = this.wordsWithTimestamps.map(w => w.word).join(' ');
-
-    const syllablesCount = this.engine.countTotalSyllables(fullText);
-    const wordsCount = this.wordsWithTimestamps.length;
-    
-    const activePauses = res.pauseSegments.filter(p => p.durationMs >= this.displayMinPauseMs);
-    const pauseCount = activePauses.length;
-    const totalSilenceMs = activePauses.reduce((acc, p) => acc + p.durationMs, 0);
-    const avgPauseMs = pauseCount > 0 ? Math.round(totalSilenceMs / pauseCount) : 0;
-
-    const bgEventsCount = activePauses.filter(p => p.eventType && p.eventType !== 'Clean Silence').length;
-
-    // Update DOM
-    this.valSpeechTime.innerHTML = `${res.totalSpeechMs.toLocaleString()} <span class="unit">ms</span>`;
-    this.subSpeechTime.textContent = `${(res.totalSpeechMs / 1000).toFixed(3)} seconds`;
-
-    this.valSilenceTime.innerHTML = `${res.totalSilenceMs.toLocaleString()} <span class="unit">ms</span>`;
-
-    this.valSyllables.textContent = syllablesCount;
-    this.valWords.textContent = wordsCount;
-
-    this.valPauses.textContent = pauseCount;
-    this.subPauses.textContent = `Avg: ${avgPauseMs} ms`;
-
-    this.valBgEvents.textContent = bgEventsCount;
-    this.subBgEvents.textContent = bgEventsCount > 0 ? `${bgEventsCount} acoustic events` : "Clean silence";
+    // UI deleted in minimal mode
   }
 
   renderAnnotatedTranscript() {
+    if (!this.analysisResult) return;
     const text = this.engine.buildAnnotatedTranscript(
       this.wordsWithTimestamps,
       this.analysisResult.pauseSegments,
@@ -610,10 +529,11 @@ class App {
     tokens.forEach(tok => {
       if (!tok) return;
       if (tok.startsWith('(pause detected:')) {
-        const match = tok.match(/\(pause detected: (\d+) ms(.*?)\)/);
-        const duration = match ? match[1] : '';
-        const extra = match && match[2] ? match[2] : '';
-        html += `<span class="pause-tag" title="Pause duration: ${duration} ms${extra}">(pause detected: ${duration} ms${extra})</span> `;
+        if (this.showPauses) {
+          const match = tok.match(/\(pause detected: (\d+) ms(.*?)\)/);
+          const duration = match ? match[1] : '';
+          html += `<span class="pause-tag" style="font-size: 0.7em; color: var(--text-muted);">(pause: ${duration}ms)</span> `;
+        }
       } else {
         const words = tok.trim().split(/\s+/).filter(Boolean);
         words.forEach(w => {
@@ -623,43 +543,13 @@ class App {
       }
     });
 
-    this.transcriptDisplay.innerHTML = html;
+    if (this.transcriptDisplay) {
+        this.transcriptDisplay.innerHTML = html;
+    }
   }
 
   renderPauseLocationsTable() {
-    const pauses = this.analysisResult.pauseSegments.filter(p => p.durationMs >= this.displayMinPauseMs);
-    if (!pauses || pauses.length === 0) {
-      this.pauseTableBody.innerHTML = `<tr><td colspan="7" class="text-center empty-cell">No pauses detected above minimum filter threshold (${this.displayMinPauseMs} ms).</td></tr>`;
-      return;
-    }
-
-    let html = '';
-    pauses.forEach((p, idx) => {
-      const startMs = p.startMs;
-      const endMs = p.endMs;
-      const durationMs = p.durationMs;
-      const eventType = p.eventType || 'Clean Silence';
-      const timeCode = `${this.formatTimeMs(startMs)} -> ${this.formatTimeMs(endMs)}`;
-
-      html += `<tr>
-        <td><strong>#${idx + 1}</strong></td>
-        <td>${startMs} ms</td>
-        <td>${endMs} ms</td>
-        <td><span class="pause-tag" style="margin: 0;">${durationMs} ms</span></td>
-        <td>${eventType}</td>
-        <td><code>${timeCode}</code></td>
-        <td><button class="btn-table-seek" data-seek-ms="${startMs}">Play at ${startMs}ms</button></td>
-      </tr>`;
-    });
-
-    this.pauseTableBody.innerHTML = html;
-
-    this.pauseTableBody.querySelectorAll('.btn-table-seek').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const ms = parseFloat(e.currentTarget.getAttribute('data-seek-ms'));
-        this.seekToMs(ms);
-      });
-    });
+    // UI deleted in minimal mode
   }
 
   renderWaveform() {
