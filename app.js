@@ -284,11 +284,8 @@ class App {
         this.transcriber = await pipeline('automatic-speech-recognition', 'Xenova/whisper-tiny.en');
       }
 
-      if (loadingText) {
-        loadingText.textContent = "🎙️ Transcribing Audio...";
-      }
-      if (this.customTranscriptInput) {
-        this.customTranscriptInput.placeholder = "🎙️ Transcribing Audio...";
+      if (this.transcriptDisplay) {
+        this.transcriptDisplay.innerHTML = `<span style="color: var(--text-muted); font-size: 0.9em;">🎙️ Transcribing Audio...</span>`;
       }
 
       const output = await this.transcriber(audioData, {
