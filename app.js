@@ -215,9 +215,6 @@ class App {
 
   async loadDemoAudio(type = 'robot') {
     const ctx = this.engine.getAudioContext();
-    if (ctx.state === 'suspended') {
-      await ctx.resume();
-    }
     const sampleRate = ctx.sampleRate;
 
     let totalDurationSec = 3.5;
