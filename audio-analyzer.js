@@ -6,7 +6,6 @@
 export class AudioAnalyzerEngine {
   constructor(options = {}) {
     this.audioCtx = null;
-    this.silenceThreshold = options.silenceThreshold || 0.015; // RMS threshold
     this.minPauseDurationMs = options.minPauseDurationMs || 50; // Min duration to qualify as acoustic pause
     this.displayMinPauseMs = options.displayMinPauseMs || 100; // Min duration to display inline in transcript
     this.frameSizeMs = options.frameSizeMs || 5; // 5ms analysis frames
@@ -36,7 +35,6 @@ export class AudioAnalyzerEngine {
    * Main acoustic analysis method for an AudioBuffer
    */
   analyzeAcoustics(audioBuffer, customOptions = {}) {
-    const silenceThreshold = customOptions.silenceThreshold !== undefined ? customOptions.silenceThreshold : this.silenceThreshold;
     const minPauseDurationMs = customOptions.minPauseDurationMs !== undefined ? customOptions.minPauseDurationMs : this.minPauseDurationMs;
 
     const sampleRate = audioBuffer.sampleRate;
@@ -75,7 +73,11 @@ export class AudioAnalyzerEngine {
     }
 
     // Dynamic threshold adapting to signal energy
-    const adaptiveThreshold = Math.max(silenceThreshold, maxEnergy * 0.05);
+    const sortedEnergies = new Float32Array(frameEnergies).sort();
+    const p10 = sortedEnergies[Math.floor(sortedEnergies.length * 0.1)]; // Noise floor estimate
+    const p50 = sortedEnergies[Math.floor(sortedEnergies.length * 0.5)]; // Median energy
+    // Threshold sits comfortably above the noise floor
+    const adaptiveThreshold = p10 + (p50 - p10) * 0.5;
 
     // Frame classification
     for (let f = 0; f < totalFrames; f++) {
@@ -246,18 +248,97 @@ export class AudioAnalyzerEngine {
    * Formats annotated transcript inserting exact pause tags into text
    * Filter out micro-pauses below displayMinPauseMs so the transcript is clean and readable
    */
-  buildAnnotatedTranscript(wordsWithTimestamps, pauseSegments, displayMinPauseMs = 100) {
+  buildAnnotatedTranscript(wordsWithTimestamps, pauseSegments, displayMinPauseMs = 100, speechSegments = []) {
     if (!wordsWithTimestamps || wordsWithTimestamps.length === 0) {
       return '';
     }
 
     const visiblePauses = pauseSegments.filter(p => p.durationMs >= displayMinPauseMs);
+
+    // If speech segments are available, use the Production-Grade Speech Chunk Merge Strategy
+    if (speechSegments && speechSegments.length > 0) {
+      // 1. Initialize speech chunks with support for rich word objects
+      const chunks = speechSegments.map(seg => ({
+        ...seg,
+        words: []
+      }));
+
+      // 2. Assign every word to exactly one speech chunk using maximum overlap.
+      // With WhisperX forced alignment, word boundaries are precise — overlap is reliable.
+      wordsWithTimestamps.forEach(w => {
+        let bestChunkIdx = -1;
+        let maxOverlap = 0;
+
+        // Primary: assign by largest physical overlap with a speech chunk
+        chunks.forEach((chunk, idx) => {
+          const overlapStart = Math.max(w.startMs, chunk.startMs);
+          const overlapEnd = Math.min(w.endMs, chunk.endMs);
+          const overlap = overlapEnd - overlapStart; // negative = no overlap
+          if (overlap > maxOverlap) {
+            maxOverlap = overlap;
+            bestChunkIdx = idx;
+          }
+        });
+
+        // Fallback: word lies in a gap (rare with forced alignment).
+        // Find closest chunk by boundary distance. Log if drift > 80ms.
+        if (bestChunkIdx === -1) {
+          const midpoint = (w.startMs + w.endMs) / 2;
+          let minDist = Infinity;
+          chunks.forEach((chunk, idx) => {
+            const dist = Math.min(
+              Math.abs(midpoint - chunk.startMs),
+              Math.abs(midpoint - chunk.endMs)
+            );
+            if (dist < minDist) {
+              minDist = dist;
+              bestChunkIdx = idx;
+            }
+          });
+          if (minDist > 80) {
+            console.warn(`[ALIGN DRIFT] Word "${w.word}" (${w.startMs}–${w.endMs}ms) is ${Math.round(minDist)}ms from nearest VAD boundary. Assigned to chunk ${bestChunkIdx + 1}.`);
+          }
+        }
+
+        chunks[bestChunkIdx].words.push(w);
+      });
+
+      // 3. Render strictly Chunk -> Pause -> Chunk
+      const annotatedParts = [];
+      chunks.forEach((chunk, idx) => {
+        if (chunk.words.length > 0) {
+          // Sort words chronologically inside the chunk to handle Whisper out-of-order timings
+          chunk.words.sort((a, b) => a.startMs - b.startMs);
+          const chunkText = chunk.words.map(w => w.word).join(' ');
+          annotatedParts.push(chunkText);
+        }
+
+        // Find the pause that belongs between this chunk and the next chunk (gap-based matching)
+        if (idx < chunks.length - 1) {
+          const gapStart = chunk.endMs;
+          const gapEnd = chunks[idx + 1].startMs;
+
+          const pause = visiblePauses.find(p => 
+            p.startMs <= gapEnd && p.endMs >= gapStart
+          );
+
+          if (pause) {
+            const bgText = pause.eventType && pause.eventType !== 'Clean Silence' ? ` [${pause.eventType}]` : '';
+            annotatedParts.push(`(pause detected: ${pause.durationMs} ms${bgText} | start: ${pause.startMs} | end: ${pause.endMs})`);
+          }
+        }
+      });
+
+      return annotatedParts.join(' ');
+    }
+
+    // Fallback sorting method for demo audio (when no backend VAD chunks exist)
     const events = [];
 
     wordsWithTimestamps.forEach((w) => {
       events.push({
         type: 'word',
-        time: w.startMs,
+        midpoint: (w.startMs + w.endMs) / 2,
         text: w.word
       });
     });
@@ -265,14 +346,18 @@ export class AudioAnalyzerEngine {
     visiblePauses.forEach(p => {
       events.push({
         type: 'pause',
-        time: p.startMs,
+        midpoint: (p.startMs + p.endMs) / 2,
         durationMs: p.durationMs,
-        eventType: p.eventType
+        eventType: p.eventType,
+        startMs: p.startMs,
+        endMs: p.endMs
       });
     });
 
     events.sort((a, b) => {
-      if (a.time !== b.time) return a.time - b.time;
+      if (a.midpoint !== b.midpoint) {
+        return a.midpoint - b.midpoint;
+      }
       return a.type === 'pause' ? -1 : 1;
     });
 
@@ -282,7 +367,7 @@ export class AudioAnalyzerEngine {
         annotatedParts.push(e.text);
       } else {
         const bgText = e.eventType && e.eventType !== 'Clean Silence' ? ` [${e.eventType}]` : '';
-        annotatedParts.push(`(pause detected: ${e.durationMs} ms${bgText})`);
+        annotatedParts.push(`(pause detected: ${e.durationMs} ms${bgText} | start: ${e.startMs} | end: ${e.endMs})`);
       }
     });
 

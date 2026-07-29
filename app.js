@@ -49,9 +49,7 @@ class App {
     this.transcriptDisplay = document.getElementById('transcript-box');
     this.showPauses = false;
     this.pauseCountStat = document.getElementById('pause-count-stat');
-    this.silenceThreshold = 0.015;
-    this.thresholdSlider = document.getElementById('threshold-slider');
-    this.thresholdVal = document.getElementById('threshold-val');
+    this.displayMinPauseMs = 10; // Restore missing parameter
     
     // LLM state
     this.llmGenerator = null;
@@ -151,19 +149,6 @@ class App {
         this.setPauseDetection(false);
       });
     }
-
-    if (this.thresholdSlider) {
-      this.thresholdSlider.addEventListener('input', (e) => {
-        const val = parseFloat(e.target.value);
-        this.silenceThreshold = val;
-        if (this.thresholdVal) {
-          this.thresholdVal.textContent = val.toFixed(3);
-        }
-        if (this.audioBuffer) {
-          this.processAudioBuffer();
-        }
-      });
-    }
   }
 
   setPauseDetection(visible) {
@@ -211,6 +196,7 @@ class App {
       }
 
       this.audioBuffer = await this.engine.decodeAudioData(arrayBuffer);
+      
       this.currentFilename.textContent = file.name;
       this.wordsWithTimestamps = [];
       this.autoRecognizedText = "";
@@ -382,12 +368,13 @@ class App {
       this.transcriptDisplay.innerHTML = `
         <div style="display: flex; align-items: center; gap: 12px; color: var(--text-muted); font-size: 0.95em;">
           <div class="spinner" style="width: 18px; height: 18px; border: 2px solid #ccc; border-top-color: var(--text-main); display: inline-block; flex-shrink: 0;"></div>
-          <span>Loading AI transcription model... (This may take a minute on first run)</span>
+          <span>Connecting to local Whisper backend...</span>
         </div>
       `;
     }
 
     try {
+      // Convert AudioBuffer to 16-bit PCM WAV Blob
       const offlineCtx = new window.OfflineAudioContext(1, this.audioBuffer.duration * 16000, 16000);
       const source = offlineCtx.createBufferSource();
       source.buffer = this.audioBuffer;
@@ -395,56 +382,91 @@ class App {
       source.start();
       const resampledBuffer = await offlineCtx.startRendering();
       const audioData = resampledBuffer.getChannelData(0);
-
-      if (!this.transcriber) {
-        this.transcriber = await pipeline('automatic-speech-recognition', 'Xenova/whisper-tiny.en');
+      
+      const buffer = new ArrayBuffer(44 + audioData.length * 2);
+      const view = new DataView(buffer);
+      
+      const writeString = (view, offset, string) => {
+        for (let i = 0; i < string.length; i++) {
+          view.setUint8(offset + i, string.charCodeAt(i));
+        }
+      };
+      
+      writeString(view, 0, 'RIFF');
+      view.setUint32(4, 36 + audioData.length * 2, true);
+      writeString(view, 8, 'WAVE');
+      writeString(view, 12, 'fmt ');
+      view.setUint32(16, 16, true);
+      view.setUint16(20, 1, true);
+      view.setUint16(22, 1, true);
+      view.setUint32(24, 16000, true);
+      view.setUint32(28, 16000 * 2, true);
+      view.setUint16(32, 2, true);
+      view.setUint16(34, 16, true);
+      writeString(view, 36, 'data');
+      view.setUint32(40, audioData.length * 2, true);
+      
+      let offset = 44;
+      for (let i = 0; i < audioData.length; i++, offset += 2) {
+        let s = Math.max(-1, Math.min(1, audioData[i]));
+        view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
       }
+      
+      const wavBlob = new Blob([buffer], { type: 'audio/wav' });
 
       if (this.transcriptDisplay) {
         this.transcriptDisplay.innerHTML = `
           <div style="display: flex; align-items: center; gap: 12px; color: var(--text-muted); font-size: 0.95em;">
             <div class="spinner" style="width: 18px; height: 18px; border: 2px solid #ccc; border-top-color: var(--text-main); display: inline-block; flex-shrink: 0;"></div>
-            <span>Transcribing Audio...</span>
+            <span>Transcribing on local Whisper backend...</span>
           </div>
         `;
       }
 
-      const output = await this.transcriber(audioData, {
-        chunk_length_s: 30,
-        stride_length_s: 5,
-        return_timestamps: 'word'
+      const formData = new FormData();
+      formData.append('file', wavBlob, 'audio.wav');
+
+      const response = await fetch('http://localhost:8000/transcribe', {
+        method: 'POST',
+        body: formData
       });
 
-      if (output.chunks) {
-        this.wordsWithTimestamps = output.chunks.map(chunk => ({
-          word: chunk.text.trim(),
-          startMs: Math.round(chunk.timestamp[0] * 1000),
-          endMs: Math.round(chunk.timestamp[1] * 1000)
-        })).filter(w => w.word.length > 0);
+      if (!response.ok) {
+        throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+      }
 
-        const text = this.wordsWithTimestamps.map(w => w.word).join(' ');
+      const data = await response.json();
+      
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      if (data.words) {
+        this.wordsWithTimestamps = data.words;
+        
+        // Use VAD data from backend
+        this.analysisResult = {
+          durationMs: this.audioBuffer.duration * 1000,
+          speechSegments: data.speech_segments || [],
+          pauseSegments: data.pauses || []
+        };
+        
+        const text = data.text;
         this.autoRecognizedText = text;
         if (this.customTranscriptInput) {
           this.customTranscriptInput.value = text;
         }
         
+        this.processAudioBuffer();
         this.setPauseDetection(true);
       } else {
-        const text = output.text.trim();
-        if (text.length > 0) {
-          this.autoRecognizedText = text;
-          if (this.customTranscriptInput) {
-            this.customTranscriptInput.value = text;
-          }
-          this.onCustomTranscriptEdited();
-          this.setPauseDetection(true);
-        }
+        throw new Error("Invalid response format from backend.");
       }
       
     } catch (err) {
       console.error("Transcription error:", err);
       if (this.transcriptDisplay) {
-        this.transcriptDisplay.innerHTML = `<span style="color: var(--text-muted); font-size: 0.9em;">❌ Error transcribing audio. See console for details.</span>`;
+        this.transcriptDisplay.innerHTML = `<span style="color: var(--text-muted); font-size: 0.9em;">❌ Error transcribing audio. Is the Python backend running on port 8000?</span>`;
       }
     } finally {
       this.isTranscribing = false;
@@ -492,10 +514,20 @@ class App {
   processAudioBuffer() {
     if (!this.audioBuffer) return;
 
-    // Run acoustic & pause analysis
-    this.analysisResult = this.engine.analyzeAcoustics(this.audioBuffer, {
-      silenceThreshold: this.silenceThreshold
-    });
+    // Run acoustic analysis ONLY to get frameEnergies for the visual waveform rendering.
+    // We completely ignore its pause/speech detection.
+    const acousticResult = this.engine.analyzeAcoustics(this.audioBuffer);
+
+    if (!this.analysisResult) {
+      this.analysisResult = {
+        durationMs: this.audioBuffer.duration * 1000,
+        speechSegments: [],
+        pauseSegments: [],
+        frameEnergies: acousticResult.frameEnergies
+      };
+    } else {
+      this.analysisResult.frameEnergies = acousticResult.frameEnergies;
+    }
 
     // If we already have exact word timestamps (e.g., from Demo), keep them
     if (this.wordsWithTimestamps && this.wordsWithTimestamps.length > 0) {
@@ -630,12 +662,11 @@ class App {
     const text = this.engine.buildAnnotatedTranscript(
       this.wordsWithTimestamps,
       this.analysisResult.pauseSegments,
-      this.displayMinPauseMs
+      this.displayMinPauseMs,
+      this.analysisResult.speechSegments
     );
 
     const tokens = text.split(/(\(pause detected: \d+ ms.*?\))/g);
-    const activePauses = this.analysisResult.pauseSegments.filter(p => p.durationMs >= this.displayMinPauseMs);
-    let pauseIdx = 0;
     let html = '';
     let wordIdx = 0;
 
@@ -643,14 +674,12 @@ class App {
       if (!tok) return;
       if (tok.startsWith('(pause detected:')) {
         if (this.showPauses) {
-          const match = tok.match(/\(pause detected: (\d+) ms(.*?)\)/);
+          const match = tok.match(/\(pause detected: (\d+) ms.*?\| start: (\d+) \| end: (\d+)\)/);
           const duration = match ? match[1] : '';
-          const pauseSeg = activePauses[pauseIdx];
-          const startMs = pauseSeg ? pauseSeg.startMs : 0;
-          const endMs = pauseSeg ? pauseSeg.endMs : 0;
+          const startMs = match ? parseInt(match[2]) : 0;
+          const endMs = match ? parseInt(match[3]) : 0;
           html += `<span class="pause-tag" data-start-ms="${startMs}" data-end-ms="${endMs}" style="font-size: 0.7em; color: var(--text-muted); transition: background 0.15s ease;">(pause: ${duration}ms)</span> `;
         }
-        pauseIdx++;
       } else {
         const words = tok.trim().split(/\s+/).filter(Boolean);
         words.forEach(w => {
