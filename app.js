@@ -48,6 +48,7 @@ class App {
 
     this.transcriptDisplay = document.getElementById('transcript-box');
     this.showPauses = false;
+    this.pauseCountStat = document.getElementById('pause-count-stat');
     
     // LLM state
     this.llmGenerator = null;
@@ -149,7 +150,10 @@ class App {
         vfOffBtn.style.color = 'var(--text-main)';
         
         this.showPauses = true;
-        if (this.analysisResult) this.renderAnnotatedTranscript();
+        if (this.analysisResult) {
+          this.renderAnnotatedTranscript();
+          this.updateMetricsUI();
+        }
       });
 
       vfOffBtn.addEventListener('click', () => {
@@ -159,7 +163,10 @@ class App {
         vfOnBtn.style.color = 'var(--text-main)';
         
         this.showPauses = false;
-        if (this.analysisResult) this.renderAnnotatedTranscript();
+        if (this.analysisResult) {
+          this.renderAnnotatedTranscript();
+          this.updateMetricsUI();
+        }
       });
     }
   }
@@ -582,7 +589,12 @@ class App {
   }
 
   updateMetricsUI() {
-    // UI deleted in minimal mode
+    if (!this.analysisResult) return;
+    const activePauses = this.analysisResult.pauseSegments.filter(p => p.durationMs >= this.displayMinPauseMs);
+    const pauseCount = this.showPauses ? activePauses.length : 0;
+    if (this.pauseCountStat) {
+      this.pauseCountStat.textContent = pauseCount;
+    }
   }
 
   renderAnnotatedTranscript() {

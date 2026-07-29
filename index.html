@@ -57,14 +57,7 @@
           
           <!-- Left Panel -->
           <div class="demo-left">
-            <div>
-              <div style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 12px; font-weight: 600; text-transform: uppercase;">Sample · Robot</div>
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px;">
-                <button class="sample-btn active" data-type="robot">Robot</button>
-                <button class="sample-btn" data-type="portfolio">Portfolio</button>
-                <button class="sample-btn" data-type="incredible">Incredible</button>
-                <button class="sample-btn" data-type="machines">Machines</button>
-              </div>
+
               
               <!-- Waveform Canvas -->
               <div class="waveform-container" style="margin-bottom: 24px;">
@@ -87,7 +80,6 @@
               
               <!-- Hidden filename element to prevent script crash -->
               <span id="current-filename" style="display: none;"></span>
-            </div>
             
             <div style="margin-top: 40px;">
               <div style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 12px; font-weight: 600; text-transform: uppercase;">Pause Detection</div>
@@ -111,15 +103,11 @@
             </div>
             
             <div style="display: flex; gap: 40px; margin-top: 40px;">
-              <div>
-                <div style="font-size: 2.5rem; color: var(--text-main); font-weight: 700; line-height: 1;">10%</div>
-                <div style="color: var(--text-muted); font-size: 0.75rem; margin-top: 8px; font-weight: bold; text-transform: uppercase;">Word error rate</div>
-              </div>
-              <div>
-                <div id="bg-words-stat" style="font-size: 2.5rem; color: var(--text-main); font-weight: 700; line-height: 1;">20</div>
-                <div style="color: var(--text-muted); font-size: 0.75rem; margin-top: 8px; font-weight: bold; text-transform: uppercase;">Background words removed</div>
-              </div>
-            </div>
+               <div>
+                 <div id="pause-count-stat" style="font-size: 2.5rem; color: var(--text-main); font-weight: 700; line-height: 1;">0</div>
+                 <div style="color: var(--text-muted); font-size: 0.75rem; margin-top: 8px; font-weight: bold; text-transform: uppercase;">Number of pauses</div>
+               </div>
+             </div>
           </div>
         </div>
       </section>
