@@ -3,8 +3,9 @@ title: ePICS Pause Detection & Speech Transcription
 emoji: 🎙️
 colorFrom: indigo
 colorTo: purple
-sdk: docker
-app_port: 7860
+sdk: gradio
+sdk_version: 4.44.1
+app_file: app.py
 pinned: false
 license: mit
 ---
@@ -41,108 +42,83 @@ Audio File
 - **Forced Alignment** — WhisperX replaces Whisper's native (drifting) word timestamps with phoneme-level accurate ones
 - **VAD-Driven Pauses** — Pauses are derived exclusively from Silero VAD speech segment gaps, not from acoustic energy
 - **Speech Chunk Rendering** — Words are grouped into speech blocks; pauses are rigidly inserted *between* blocks
-- **Waveform Visualization** — Interactive waveform with pause markers
-- **Playback Synchronization** — Words and pauses highlighted in real-time during audio playback
+- **Waveform & Audio Controls** — Interactive audio recorder and playback with pause badges
+- **Summary Metrics** — Speech rate (WPM), pause count, pause ratio, and detailed pause table
+
+---
 
 ## Deploying to Hugging Face Spaces
 
-This repository is ready to run as a Docker Space on Hugging Face:
+This repository is ready to run as a **Gradio Space with Free ZeroGPU** or as a **Docker Space**:
 
 ### Step 1: Create a Space on Hugging Face
 1. Go to [huggingface.co/new-space](https://huggingface.co/new-space).
-2. Enter Space Name: `ePICS`.
+2. Space Name: `ePICS` (or your choice).
 3. License: `mit`.
-4. Select **Docker** as the Space SDK (Choose Blank).
-5. Choose Free CPU (or T4 GPU for lightning-fast transcription).
+4. Space SDK: Select **Gradio** (Recommended for free ZeroGPU) or **Docker**.
+5. Hardware: **ZeroGPU** (free) or standard CPU.
 
-### Step 2: Push to Hugging Face
-You can push directly via Git:
+### Step 2: Push your Code to Hugging Face
 
+**Option A (Direct Git Push):**
 ```bash
 git remote add space https://huggingface.co/spaces/<YOUR_HF_USERNAME>/ePICS
 git push space main
 ```
 
-Or enable automated sync from GitHub:
-1. Go to **Settings > Secrets and variables > Actions** in your GitHub repository.
-2. Add a repository secret `HF_TOKEN` with a write-access Hugging Face token (from [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens)).
-3. Add a repository variable `HF_SPACE_REPO` set to `<YOUR_HF_USERNAME>/ePICS`.
-4. Any push to `main` will automatically build and deploy your Space via the included GitHub Action.
+**Option B (Automated GitHub Actions Sync):**
+1. In your GitHub repository, navigate to **Settings > Secrets and variables > Actions**.
+2. Add a Secret `HF_TOKEN` with your write token from [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens).
+3. Add a Variable `HF_SPACE_REPO` set to `<YOUR_HF_USERNAME>/ePICS`.
+4. Any push to `main` automatically deploys to Hugging Face!
 
 ---
 
 ## Running Locally
 
-### Requirements
-
-- Python 3.10+
-- FFmpeg (required for audio decoding)
-- ~1GB disk space (for AI model weights)
-
-### 1. Install Backend Dependencies
+### 1. Install Dependencies
 
 ```bash
-cd backend
 pip install -r requirements.txt
 ```
 
-> **Note:** First run will automatically download model weights:
-> - OpenAI Whisper `base` model (~150MB)
-> - WhisperX Wav2Vec2 English alignment model (~360MB)
-> - Silero VAD model (~2MB, cached by PyTorch hub)
+### 2. Run Gradio Demo
 
-### 2. Start the Application
+```bash
+python app.py
+```
+Open **http://localhost:7860** in your browser.
 
-You can start the unified server directly:
+### 3. Run FastAPI + Custom Frontend Prototype
 
 ```bash
 python -m backend.server
 ```
-
-Then open **http://localhost:7860** in your browser. The backend automatically serves both the FastAPI endpoints and the interactive frontend.
-
-Alternatively, if you run the frontend separately with Vite or a static HTTP server:
+Or with custom port:
 ```bash
-python backend/server.py     # Starts on port 8000
-python -m http.server 8080   # Starts frontend on port 8080
+python backend/server.py
 ```
 
-### 3. Upload Audio
-
-- Click **Choose Audio File** and select a `.wav`, `.mp3`, or `.m4a` file
-- The application processes the file through Whisper, WhisperX alignment, and Silero VAD
-- Transcript with detected pauses appears automatically with waveform playback synchronization
-
-## Backend API
-
-```
-POST /transcribe
-Content-Type: multipart/form-data
-Body: file=<audio_file>
-
-Response:
-{
-  "text": "full transcript string",
-  "words": [{ "word": "Hi", "startMs": 240, "endMs": 461 }, ...],
-  "speech_segments": [{ "startMs": 136, "endMs": 760 }, ...],
-  "pauses": [{ "startMs": 760, "endMs": 1704, "durationMs": 944, "eventType": "VAD Pause" }, ...]
-}
-```
+---
 
 ## Project Structure
 
 ```
 epics/
-├── Dockerfile                   # Hugging Face Spaces / Docker container definition
-├── .dockerignore                # Excluded build files
+├── app.py                       # Hugging Face Space Gradio application (ZeroGPU supported)
+├── packages.txt                 # Debian system packages for Hugging Face (ffmpeg)
+├── requirements.txt             # Python dependencies for Hugging Face
+├── Dockerfile                   # Docker container definition (for Docker Spaces)
+├── .dockerignore                # Container build ignore rules
 ├── .github/workflows/
 │   └── sync_to_huggingface.yml  # Automated GitHub-to-Hugging Face Space sync
-├── index.html                   # Main UI
-├── app.js                       # Frontend application logic
-├── audio-analyzer.js            # Word-to-chunk assignment & transcript rendering
-├── styles.css                   # Styling
+├── index.html                   # Custom HTML prototype UI
+├── app.js                       # Custom prototype frontend logic
+├── audio-analyzer.js            # In-browser chunk assignment and rendering
+├── styles.css                   # Custom styles
+├── sample.wav                   # Demo audio file
 └── backend/
     ├── __init__.py
-    ├── server.py                # FastAPI server (Whisper + WhisperX + Silero VAD + Static files)
-    └── requirements.txt         # Python dependencies
+    ├── server.py                # FastAPI server (Whisper + WhisperX + Silero VAD)
+    └── requirements.txt         # Backend Python dependencies
 ```

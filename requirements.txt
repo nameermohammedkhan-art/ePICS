@@ -1,0 +1,11 @@
+gradio>=4.44.0
+spaces
+torch
+torchaudio
+openai-whisper>=20231117
+whisperx
+pandas
+fastapi>=0.111.0
+uvicorn>=0.30.1
+python-multipart>=0.0.9
+aiofiles>=23.2.0
