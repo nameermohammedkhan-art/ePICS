@@ -149,7 +149,13 @@ def analyze_speech_and_pauses(audio_file_path, min_pause_ms=400):
             })
 
         # 3. Silero Voice Activity Detection (VAD)
-        wav = read_audio(audio_file_path, sampling_rate=16000)
+        # Convert WhisperX's 16kHz float32 audio to PyTorch Tensor directly.
+        # This eliminates redundant file reads and completely bypasses torchaudio/torchcodec I/O bugs.
+        if isinstance(audio, torch.Tensor):
+            wav = audio.float().squeeze()
+        else:
+            wav = torch.from_numpy(audio).float().squeeze()
+
         audio_duration_sec = len(wav) / 16000.0
         total_duration_ms = int(audio_duration_sec * 1000)
 

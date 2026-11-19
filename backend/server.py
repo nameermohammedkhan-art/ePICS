@@ -97,9 +97,12 @@ async def transcribe_audio(file: UploadFile = File(...)):
         print(f"\nAligned {len(words_data)} words total.")
 
         # Step 3: Silero VAD for speech segment boundaries
-        print("Silero input:", temp_file_path)
+        print("Silero input: in-memory tensor from WhisperX decoded audio")
         print(f"Detecting speech boundaries with Silero VAD...")
-        wav = read_audio(temp_file_path, sampling_rate=16000)
+        if isinstance(audio, torch.Tensor):
+            wav = audio.float().squeeze()
+        else:
+            wav = torch.from_numpy(audio).float().squeeze()
         speech_timestamps = get_speech_timestamps(
             wav,
             silero_model,
