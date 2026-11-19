@@ -22,6 +22,18 @@ try:
 except Exception:
     pass
 
+# Compatibility fix for gradio_client JSON schema boolean bug with newer pydantic
+try:
+    import gradio_client.utils
+    _orig_get_type = gradio_client.utils.get_type
+    def _safe_get_type(schema):
+        if isinstance(schema, bool):
+            return "boolean"
+        return _orig_get_type(schema)
+    gradio_client.utils.get_type = _safe_get_type
+except Exception:
+    pass
+
 import torch
 import whisper
 import whisperx
@@ -374,4 +386,5 @@ with gr.Blocks(css=custom_css, title="ePICS — Pause Detection & Speech Transcr
     """)
 
 if __name__ == "__main__":
-    demo.queue().launch()
+    port = int(os.environ.get("PORT", 7860))
+    demo.queue().launch(server_name="0.0.0.0", server_port=port, show_api=False)
