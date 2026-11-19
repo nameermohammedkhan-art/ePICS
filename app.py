@@ -1,5 +1,27 @@
 import os
+import sys
 import tempfile
+
+# Compatibility fix for huggingface_hub >= 1.0 where HfFolder was removed
+try:
+    import huggingface_hub
+    if not hasattr(huggingface_hub, "HfFolder"):
+        class HfFolder:
+            @staticmethod
+            def get_token():
+                return getattr(huggingface_hub, "get_token", lambda: None)()
+            @staticmethod
+            def save_token(token):
+                if hasattr(huggingface_hub, "login"):
+                    huggingface_hub.login(token=token)
+            @staticmethod
+            def delete_token():
+                if hasattr(huggingface_hub, "logout"):
+                    huggingface_hub.logout()
+        huggingface_hub.HfFolder = HfFolder
+except Exception:
+    pass
+
 import torch
 import whisper
 import whisperx
@@ -18,8 +40,10 @@ except ImportError:
 os.environ.setdefault("TORCH_HOME", "/tmp/torch_cache")
 os.environ.setdefault("HF_HOME", "/tmp/hf_cache")
 
-DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-print(f"[ePICS] Initializing on device: {DEVICE}")
+def get_device():
+    return "cuda" if torch.cuda.is_available() else "cpu"
+
+print(f"[ePICS] Initializing (device: {get_device()})")
 
 # Global model holders for lazy/cached loading
 whisper_model = None
@@ -27,30 +51,32 @@ align_model = None
 align_metadata = None
 silero_model = None
 silero_utils = None
+loaded_device = None
 
 def get_models():
-    global whisper_model, align_model, align_metadata, silero_model, silero_utils
-    if whisper_model is None:
-        print("[ePICS] Loading Whisper 'base' model...")
-        whisper_model = whisper.load_model("base", device=DEVICE)
+    global whisper_model, align_model, align_metadata, silero_model, silero_utils, loaded_device
+    device = get_device()
+    if whisper_model is None or loaded_device != device:
+        print(f"[ePICS] Loading Whisper 'base' model on {device}...")
+        whisper_model = whisper.load_model("base", device=device)
         print("[ePICS] Whisper loaded successfully.")
 
-    if align_model is None:
-        print("[ePICS] Loading WhisperX forced alignment model...")
-        align_model, align_metadata = whisperx.load_align_model(language_code="en", device=DEVICE)
+        print(f"[ePICS] Loading WhisperX forced alignment model on {device}...")
+        align_model, align_metadata = whisperx.load_align_model(language_code="en", device=device)
         print("[ePICS] WhisperX alignment model loaded.")
 
-    if silero_model is None:
-        print("[ePICS] Loading Silero VAD model...")
-        silero_model, silero_utils = torch.hub.load(
-            repo_or_dir='snakers4/silero-vad',
-            model='silero_vad',
-            force_reload=False,
-            onnx=False,
-            trust_repo=True
-        )
-        print("[ePICS] Silero VAD loaded.")
-    return whisper_model, align_model, align_metadata, silero_model, silero_utils
+        if silero_model is None:
+            print("[ePICS] Loading Silero VAD model...")
+            silero_model, silero_utils = torch.hub.load(
+                repo_or_dir='snakers4/silero-vad',
+                model='silero_vad',
+                force_reload=False,
+                onnx=False,
+                trust_repo=True
+            )
+            print("[ePICS] Silero VAD loaded.")
+        loaded_device = device
+    return whisper_model, align_model, align_metadata, silero_model, silero_utils, device
 
 @gpu_decorator
 def analyze_speech_and_pauses(audio_file_path, min_pause_ms=400):
@@ -63,7 +89,7 @@ def analyze_speech_and_pauses(audio_file_path, min_pause_ms=400):
         )
 
     try:
-        w_model, a_model, a_meta, v_model, v_utils = get_models()
+        w_model, a_model, a_meta, v_model, v_utils, device = get_models()
         (get_speech_timestamps, save_audio, read_audio, VADIterator, collect_chunks) = v_utils
 
         # 1. Whisper Transcription
@@ -77,7 +103,7 @@ def analyze_speech_and_pauses(audio_file_path, min_pause_ms=400):
             a_model,
             a_meta,
             audio,
-            DEVICE,
+            device,
             return_char_alignments=False
         )
 
