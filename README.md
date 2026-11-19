@@ -1,3 +1,14 @@
+---
+title: ePICS Pause Detection & Speech Transcription
+emoji: 🎙️
+colorFrom: indigo
+colorTo: purple
+sdk: docker
+app_port: 7860
+pinned: false
+license: mit
+---
+
 # ePICS — Pause Detection & Speech Transcription
 
 A web application for detecting and analyzing rhetorical pauses in speech recordings, built for the EPICS project.
@@ -33,13 +44,40 @@ Audio File
 - **Waveform Visualization** — Interactive waveform with pause markers
 - **Playback Synchronization** — Words and pauses highlighted in real-time during audio playback
 
-## Requirements
+## Deploying to Hugging Face Spaces
+
+This repository is ready to run as a Docker Space on Hugging Face:
+
+### Step 1: Create a Space on Hugging Face
+1. Go to [huggingface.co/new-space](https://huggingface.co/new-space).
+2. Enter Space Name: `ePICS`.
+3. License: `mit`.
+4. Select **Docker** as the Space SDK (Choose Blank).
+5. Choose Free CPU (or T4 GPU for lightning-fast transcription).
+
+### Step 2: Push to Hugging Face
+You can push directly via Git:
+
+```bash
+git remote add space https://huggingface.co/spaces/<YOUR_HF_USERNAME>/ePICS
+git push space main
+```
+
+Or enable automated sync from GitHub:
+1. Go to **Settings > Secrets and variables > Actions** in your GitHub repository.
+2. Add a repository secret `HF_TOKEN` with a write-access Hugging Face token (from [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens)).
+3. Add a repository variable `HF_SPACE_REPO` set to `<YOUR_HF_USERNAME>/ePICS`.
+4. Any push to `main` will automatically build and deploy your Space via the included GitHub Action.
+
+---
+
+## Running Locally
+
+### Requirements
 
 - Python 3.10+
-- Node.js (for serving the frontend)
+- FFmpeg (required for audio decoding)
 - ~1GB disk space (for AI model weights)
-
-## How to Run
 
 ### 1. Install Backend Dependencies
 
@@ -53,46 +91,27 @@ pip install -r requirements.txt
 > - WhisperX Wav2Vec2 English alignment model (~360MB)
 > - Silero VAD model (~2MB, cached by PyTorch hub)
 
-### 2. Start the Python Backend
+### 2. Start the Application
+
+You can start the unified server directly:
 
 ```bash
-cd backend
-python server.py
+python -m backend.server
 ```
 
-The backend starts on **http://localhost:8000**. Wait for all three models to load:
+Then open **http://localhost:7860** in your browser. The backend automatically serves both the FastAPI endpoints and the interactive frontend.
 
-```
-Loading Whisper model (this may take a moment)...
-Whisper model loaded successfully!
-Loading WhisperX alignment model...
-WhisperX alignment model loaded successfully!
-Loading Silero VAD model...
-Silero VAD model loaded successfully!
-INFO:     Uvicorn running on http://0.0.0.0:8000
-```
-
-### 3. Serve the Frontend
-
-In a **separate terminal**, from the project root:
-
-#### Option A: Python static server
+Alternatively, if you run the frontend separately with Vite or a static HTTP server:
 ```bash
-python -m http.server 8080
+python backend/server.py     # Starts on port 8000
+python -m http.server 8080   # Starts frontend on port 8080
 ```
 
-#### Option B: Node.js / npx
-```bash
-npx http-server -p 8080
-```
+### 3. Upload Audio
 
-Then open **http://localhost:8080** in your browser.
-
-### 4. Upload Audio
-
-- Click **Upload Audio File** and select a `.wav`, `.mp3`, or `.m4a` file
-- The frontend sends the file to the Python backend for processing
-- Transcript with detected pauses appears automatically
+- Click **Choose Audio File** and select a `.wav`, `.mp3`, or `.m4a` file
+- The application processes the file through Whisper, WhisperX alignment, and Silero VAD
+- Transcript with detected pauses appears automatically with waveform playback synchronization
 
 ## Backend API
 
@@ -114,11 +133,16 @@ Response:
 
 ```
 epics/
-├── index.html           # Main UI
-├── app.js               # Frontend application logic
-├── audio-analyzer.js    # Word-to-chunk assignment & transcript rendering
-├── styles.css           # Styling
+├── Dockerfile                   # Hugging Face Spaces / Docker container definition
+├── .dockerignore                # Excluded build files
+├── .github/workflows/
+│   └── sync_to_huggingface.yml  # Automated GitHub-to-Hugging Face Space sync
+├── index.html                   # Main UI
+├── app.js                       # Frontend application logic
+├── audio-analyzer.js            # Word-to-chunk assignment & transcript rendering
+├── styles.css                   # Styling
 └── backend/
-    ├── server.py        # FastAPI server (Whisper + WhisperX + Silero VAD)
-    └── requirements.txt # Python dependencies
+    ├── __init__.py
+    ├── server.py                # FastAPI server (Whisper + WhisperX + Silero VAD + Static files)
+    └── requirements.txt         # Python dependencies
 ```

@@ -426,7 +426,13 @@ class App {
       const formData = new FormData();
       formData.append('file', wavBlob, 'audio.wav');
 
-      const response = await fetch('http://localhost:8000/transcribe', {
+      const isStandaloneFrontendDev = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') && 
+                                      window.location.port !== '8000' && 
+                                      window.location.port !== '7860' && 
+                                      window.location.port !== '';
+      const transcribeUrl = isStandaloneFrontendDev ? 'http://localhost:8000/transcribe' : '/transcribe';
+
+      const response = await fetch(transcribeUrl, {
         method: 'POST',
         body: formData
       });
@@ -466,7 +472,7 @@ class App {
     } catch (err) {
       console.error("Transcription error:", err);
       if (this.transcriptDisplay) {
-        this.transcriptDisplay.innerHTML = `<span style="color: var(--text-muted); font-size: 0.9em;">❌ Error transcribing audio. Is the Python backend running on port 8000?</span>`;
+        this.transcriptDisplay.innerHTML = `<span style="color: var(--text-muted); font-size: 0.9em;">❌ Error transcribing audio (${err.message}). Please ensure backend is running.</span>`;
       }
     } finally {
       this.isTranscribing = false;

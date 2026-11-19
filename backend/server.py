@@ -5,8 +5,9 @@ import whisperx
 import torch
 from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
-app = FastAPI()
+app = FastAPI(title="ePICS Audio Analyzer API")
 
 app.add_middleware(
     CORSMiddleware,
@@ -16,11 +17,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-DEVICE = "cpu"
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+print(f"Using compute device: {DEVICE}")
+
+os.environ.setdefault("TORCH_HOME", "/tmp/torch_cache")
+os.environ.setdefault("HF_HOME", "/tmp/hf_cache")
 
 print("Loading Whisper model (this may take a moment)...")
 # Load the 'base' model via openai-whisper for transcription
-model = whisper.load_model("base")
+model = whisper.load_model("base", device=DEVICE)
 print("Whisper model loaded successfully!")
 
 print("Loading WhisperX alignment model...")
@@ -162,6 +167,22 @@ async def transcribe_audio(file: UploadFile = File(...)):
     finally:
         os.remove(temp_file_path)
 
+# Serve static frontend files (HTML/CSS/JS) if available
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+ROOT_DIR = os.path.dirname(BASE_DIR)
+
+frontend_dir = None
+if os.path.exists(os.path.join(BASE_DIR, "index.html")):
+    frontend_dir = BASE_DIR
+elif os.path.exists(os.path.join(ROOT_DIR, "index.html")):
+    frontend_dir = ROOT_DIR
+
+if frontend_dir:
+    print(f"Serving static frontend files from: {frontend_dir}")
+    app.mount("/", StaticFiles(directory=frontend_dir, html=True), name="frontend")
+
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    port = int(os.environ.get("PORT", 7860))
+    module = "backend.server:app" if os.path.exists("backend") else "server:app"
+    uvicorn.run(module, host="0.0.0.0", port=port)
