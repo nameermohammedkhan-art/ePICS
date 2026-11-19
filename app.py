@@ -34,6 +34,25 @@ try:
 except Exception:
     pass
 
+# Compatibility fix for Starlette >= 0.39 TemplateResponse signature change
+try:
+    import inspect
+    import starlette.templating
+    _orig_template_response = starlette.templating.Jinja2Templates.TemplateResponse
+    _sig = inspect.signature(_orig_template_response)
+    _params = list(_sig.parameters.keys())
+    if len(_params) >= 2 and _params[1] == "request":
+        def _patched_template_response(self, *args, **kwargs):
+            if len(args) >= 2 and isinstance(args[0], str) and isinstance(args[1], dict):
+                req = args[1].get("request")
+                name = args[0]
+                context = args[1]
+                return _orig_template_response(self, req, name, context, **kwargs)
+            return _orig_template_response(self, *args, **kwargs)
+        starlette.templating.Jinja2Templates.TemplateResponse = _patched_template_response
+except Exception:
+    pass
+
 import torch
 import whisper
 import whisperx
